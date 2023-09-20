@@ -1,3 +1,3 @@
 # pisend_src
 
-Sources fro pisend 3
+Sources for pisend 3
