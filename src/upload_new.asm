@@ -202,7 +202,7 @@ no_loops_required:
         ld      a,$0d : call senduart			; ctrl + c 
         ld      a,$0d : call senduart			; ctrl + c 
 
-        call    check_md5sum 
+       ;  call    check_md5sum 
 
 
         ret 
