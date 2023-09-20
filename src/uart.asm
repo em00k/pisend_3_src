@@ -1,20 +1,20 @@
 senduart:	
 	; in a char to send 
 
-			ld 		bc,UART_TX_P_133B 						; write to uart 
-			ld 		d,a 
-			ld 		e,100
+		ld 		bc,UART_TX_P_133B 						; write to uart 
+		ld 		d,a 
+		ld 		e,100
 .toutb:		; if busy do a little loop 
-			dec 	e 			; but not forever 
-			ld		a, e 
-			or 		a
-			jr		z, .nomorewaiting
-			in 		a,(c) 
-			and	 	%10000
-			jr 		z,.toutb	; bit 4 = 1 when tx empty 
+		dec 	e 			; but not forever 
+		ld		a, e 
+		or 		a
+		jr		z, .nomorewaiting
+		in 		a,(c) 
+		and	 	%10000
+		jr 		z,.toutb	; bit 4 = 1 when tx empty 
 .nomorewaiting:
-			out 	(c),d
-			ret 
+		out 	(c),d
+		ret 
 
 
 ;////////////////////////
@@ -23,25 +23,25 @@ senduart:
 ;// 
 
 senduartmemory:
-			di 
-			push bc : push hl : push de 
+		di 
+		push bc : push hl : push de 
 
-			xor 	a
-			ld 		(dolinefeed),a 				; reset line feed flag 
-			ld 		de,(filesize)				; chunk size 
-			ld 		bc,$133b					; TX 
+		xor 	a
+		ld 		(dolinefeed),a 				; reset line feed flag 
+		ld 		de,(filesize)				; chunk size 
+		ld 		bc,$133b					; TX 
 outb:	
-			in a,(c) : and %10 : jr nz,outb		; check if busy? if so loop 
-			ld a,(hl) : inc hl : out (c),a		; else send byte to uart 
+		in a,(c) : and %10 : jr nz,outb		; check if busy? if so loop 
+		ld a,(hl) : inc hl : out (c),a		; else send byte to uart 
 
-			and 7 : out (254),a   				; border effect 
-			ld 		a,(dolinefeed)
-			inc 	a
-			cp 		128							; 128 lines written?
-			jr 		z,linefeed 					; then do line feed 
-			
-			ld 		(dolinefeed),a 	
-			jr 		nolinefeed
+		and 7 : out (254),a   				; border effect 
+		ld 		a,(dolinefeed)
+		inc 	a
+		cp 		128							; 128 lines written?
+		jr 		z,linefeed 					; then do line feed 
+		
+		ld 		(dolinefeed),a 	
+		jr 		nolinefeed
 			
 dolinefeed: db 0 
 
@@ -50,155 +50,155 @@ linefeed: 	in a,(c) : and %10 : jr nz,linefeed	; loop if uart is busy
 			xor a : ld (dolinefeed),a 			; reset linefeed counter 
 
 nolinefeed:			
-			dec 	de							; dec filesize and check for 0
-			ld 		a,e
-			or 		d
-			jr 		nz,outb
+		dec 	de							; dec filesize and check for 0
+		ld 		a,e
+		or 		d
+		jr 		nz,outb
 
-			pop de : pop hl : pop bc 
-			ret 
+		pop de : pop hl : pop bc 
+		ret 
 
 
 
 ; sets baud rat 
 
 setbaud115200:	
-			xor     a
+		xor     a
 			
 setbaudrate:		
-			ld      a, (curbaud)
+		ld      a, (curbaud)
 
 ;now we calculate the prescaler value to set for our vga timing.
 
-			push    af
-			pop     af						; a board = 0 			
-   
-			ld      d,0
-			sla     a		; *2
-			rl      d
-			sla     a		; *4
-			rl      d
-			sla     a		; *8
-			rl      d
-			sla     a		; *16
-			rl      d	
-			ld      e,a		
-			ld      hl,baudprescale	; hl now points at the baud to use.
-			add     hl,de						; vector for baud values 
-			ld      bc,9275	;now adjust for the set video timing.
-			ld      a,17			; reg $11 
-			out     (c),a
-			ld      bc,9531	
-			in      a,(c)	;get timing adjustment
-			ld      e,a
-			rlc     e		;*2 guaranteed as <127
-			ld      d,0
-			add     hl,de
-			ld      e,(hl)
-			inc     hl
-			ld      d,(hl)
-			ex      de,hl
+		push    af
+		pop     af						; a board = 0 			
 
-			push    hl		; this is prescaler		
-			push    af		; and value
-						
-			ld      bc,UART_RX_P_143B					; 
-			ld      a,l
-			and     %01111111	; res bit 7 to request write to lower 7 bits
-			out     (c),a
-			ld      a,h
-			rl      l		; bit 7 in carry
-			rla		; now in bit 0
-			or      %10000000	; set msb to request write to upper 7 bits
-			out     (c),a
+		ld      d,0
+		sla     a		; *2
+		rl      d
+		sla     a		; *4
+		rl      d
+		sla     a		; *8
+		rl      d
+		sla     a		; *16
+		rl      d	
+		ld      e,a		
+		ld      hl,baudprescale	; hl now points at the baud to use.
+		add     hl,de						; vector for baud values 
+		ld      bc,9275	;now adjust for the set video timing.
+		ld      a,17			; reg $11 
+		out     (c),a
+		ld      bc,9531	
+		in      a,(c)	;get timing adjustment
+		ld      e,a
+		rlc     e		;*2 guaranteed as <127
+		ld      d,0
+		add     hl,de
+		ld      e,(hl)
+		inc     hl
+		ld      d,(hl)
+		ex      de,hl
 
-			pop     af
-			ld      l,a
-			ld      h,0
+		push    hl		; this is prescaler		
+		push    af		; and value
+					
+		ld      bc,UART_RX_P_143B					; 
+		ld      a,l
+		and     %01111111	; res bit 7 to request write to lower 7 bits
+		out     (c),a
+		ld      a,h
+		rl      l		; bit 7 in carry
+		rla		; now in bit 0
+		or      %10000000	; set msb to request write to upper 7 bits
+		out     (c),a
 
-			pop     hl
-			ret
+		pop     af
+		ld      l,a
+		ld      h,0
+
+		pop     hl
+		ret
 
 baudprescale:
 
-			defw 243,248,256,260,269,278,286,234 			; was 0 - 115200 adjust for 0-7
-			DEFW 49,50,51,52,54,56,57,47 ;576000 -10
-			defw 14,14,15,15,16,16,17,14 					;2000000 -14
+		defw 243,248,256,260,269,278,286,234 			; was 0 - 115200 adjust for 0-7
+		DEFW 49,50,51,52,54,56,57,47 ;576000 -10
+		defw 14,14,15,15,16,16,17,14 					;2000000 -14
 
 
-			DEFW 243,248,256,260,269,278,286,234 ; Was 0 - 115200 adjust for 0-7
-			DEFW 486,496,512,521,538,556,573,469 ; 56k
-			DEFW 729,744,767,781,807,833,859,703 ; 38k
-			DEFW 896,914,943,960,992,1024,1056,864 ; 31250 (MIDI)
-			DEFW 1458,1488,1535,1563,1615,1667,1719,1406 ; 19200
-			DEFW 2917,2976,3069,3125,3229,3333,3438,2813 ; 9600
-			DEFW 5833,5952,6138,6250,6458,6667,6875,5625 ; 4800
-			DEFW 11667,11905,12277,12500,12917,13333,13750,11250 ; 2400
-			DEFW 122,124,128,130,135,139,143,117 ; 230400 -8
-			DEFW 61,62,64,65,67,69,72,59 ;460800 -9
-			DEFW 49,50,51,52,54,56,57,47 ;576000 -10
-			DEFW 30,31,32,33,34,35,36,29 ;921600 -11
-			DEFW 24,25,26,26,27,28,29,23 ;1152000 -12
-			DEFW 19,19,20,20,21,21,22,18 ;1500000 -13
-			DEFW 14,14,15,15,16,16,17,14 ;2000000 -14
+		DEFW 243,248,256,260,269,278,286,234 ; Was 0 - 115200 adjust for 0-7
+		DEFW 486,496,512,521,538,556,573,469 ; 56k
+		DEFW 729,744,767,781,807,833,859,703 ; 38k
+		DEFW 896,914,943,960,992,1024,1056,864 ; 31250 (MIDI)
+		DEFW 1458,1488,1535,1563,1615,1667,1719,1406 ; 19200
+		DEFW 2917,2976,3069,3125,3229,3333,3438,2813 ; 9600
+		DEFW 5833,5952,6138,6250,6458,6667,6875,5625 ; 4800
+		DEFW 11667,11905,12277,12500,12917,13333,13750,11250 ; 2400
+		DEFW 122,124,128,130,135,139,143,117 ; 230400 -8
+		DEFW 61,62,64,65,67,69,72,59 ;460800 -9
+		DEFW 49,50,51,52,54,56,57,47 ;576000 -10
+		DEFW 30,31,32,33,34,35,36,29 ;921600 -11
+		DEFW 24,25,26,26,27,28,29,23 ;1152000 -12
+		DEFW 19,19,20,20,21,21,22,18 ;1500000 -13
+		DEFW 14,14,15,15,16,16,17,14 ;2000000 -14
 
 
 curbaud:	
-			defb 0			;start at 115200
-			defb 0			;zero for easy load at 16bits
+		defb 0			;start at 115200
+		defb 0			;zero for easy load at 16bits
 
 
 open_uart: 
-			ld bc,UART_CTRL_P_153B : ld a,64 : out (c),a 
-			ld bc,$163B : ld a,%00111000 : out (c),a
-			nextreg PI_PERIPHERALS_ENABLE_NR_A0, $30
-			nextreg PI_I2S_AUDIO_CONTROL_NR_A2, $d2			
-			call    flushuart
-			ret 
+		ld bc,UART_CTRL_P_153B : ld a,64 : out (c),a 
+		ld bc,$163B : ld a,%00111000 : out (c),a
+		nextreg PI_PERIPHERALS_ENABLE_NR_A0, $30
+		nextreg PI_I2S_AUDIO_CONTROL_NR_A2, $d2			
+		call    flushuart
+		ret 
 	
 clear_uart: 
 			; sends a clear command 
-			push bc : ld b,200			; this is purely to slow stuff down 
+		push bc : ld b,200			; this is purely to slow stuff down 
 .wtl		ld (tempsup),ix : djnz .wtl : pop bc 
-			ld a, 13 : call senduart
-			ld a, $03 : call senduart
-			ld a, $03 : call senduart
-			ret 
+		ld a, 13 : call senduart
+		ld a, $03 : call senduart
+		ld a, $03 : call senduart
+		ret 
 
 
 swap_pi_baud: 	
-			ld a,$7f : call getreg : and 15 : cp 8 : jp z,.set2mbit
-			cp 2 : jp z,.dotnset	; 115200 
-			ld hl,failedbaudtest : jp printfailed
+		ld a,$7f : call getreg : and 15 : cp 8 : jp z,.set2mbit
+		cp 2 : jp z,.dotnset	; 115200 
+		ld hl,failedbaudtest : jp printfailed
 		
 .set2mbit:
-			ld hl,_2mbto115 : call print_rst16
-			ld hl,update115
-			jr .overdotnset
+		ld hl,_2mbto115 : call print_rst16
+		ld hl,update115
+		jr .overdotnset
 .dotnset:			
-			ld hl,_115to2mb : call print_rst16
-			ld hl,update2mb
+		ld hl,_115to2mb : call print_rst16
+		ld hl,update2mb
 .overdotnset:			
-			ld de,command_buffer : ld bc,end115-update115: ldir 
-			ld hl,updatetext : call print_rst16
+		ld de,command_buffer : ld bc,end115-update115: ldir 
+		ld hl,updatetext : call print_rst16
 		
 configdone:
-			ld a,(silent_prog) : cp 1 : jr z,justsend 
-			; this bit just sends a command  to nextpi and quits 
-			ld a,$7f :call getreg : and 15: cp 8 : jr z,.set2mbit
-			cp 2 : jr z,.dotnset	; 115200 
-			ld hl,failedbaudtest : jp printfailed
+		ld a,(silent_prog) : cp 1 : jr z,justsend 
+		; this bit just sends a command  to nextpi and quits 
+		ld a,$7f :call getreg : and 15: cp 8 : jr z,.set2mbit
+		cp 2 : jr z,.dotnset	; 115200 
+		ld hl,failedbaudtest : jp printfailed
 .set2mbit:
-			ld a,1 : ld (curbaud),a 
+		ld a,1 : ld (curbaud),a 
 .dotnset:			
 			
-			call open_uart			
-			call clear_uart   ; ctrl+c				
-			ld a,$0d : call senduart
+		call open_uart			
+		call clear_uart   ; ctrl+c				
+		ld a,$0d : call senduart
 justsend:			
-			ld hl,command_buffer+1 : call streamuart
-			ld a,$0a : call senduart
-			jp finish
+		ld hl,command_buffer+1 : call streamuart
+		ld a,$0a : call senduart
+		jp finish
 
 
 ;////////////////////////
@@ -208,39 +208,39 @@ justsend:
 
 hard_clear_uart:
 			
-        ;    LOG "OPENING UART"
-			call    open_uart
-		;	LOG "CLEAR UART"
-			call    clear_uart
-		;	LOG "SET BAUD"
-			ld      a,3 : ld bc,UART_TX_P_133B : out (c),a 
-			call    setbaud115200
-			nextreg $7f,0
-			ld      hl,trylowboaud : call print_at
-			ld      a,13 : call senduart
-			ld      a,4 : call senduart
-			
-            ; try 115200 first 
-			call    waitforsup				; sup flag will = 2 if a sup was found. 
-			ld      a,(supbaudflag) : cp 2 : nextreg $7f,2 : ld hl,trysuccess : jr z,correctbaud
+	;    LOG "OPENING UART"
+		call    open_uart
+	;	LOG "CLEAR UART"
+		call    clear_uart
+	;	LOG "SET BAUD"
+		ld      a,3 : ld bc,UART_TX_P_133B : out (c),a 
+		call    setbaud115200
+		nextreg $7f,0
+		ld      hl,trylowboaud : call print_at
+		ld      a,13 : call senduart
+		ld      a,4 : call senduart
+		
+		; try 115200 first 
+		call    waitforsup				; sup flag will = 2 if a sup was found. 
+		ld      a,(supbaudflag) : cp 2 : nextreg $7f,2 : ld hl,trysuccess : jr z,correctbaud
 
-			; try 2MBit 
-			ld      hl,tryhighbaud: call print_at
-			ld      a,1 : ld (curbaud),a 
-			call    setbaudrate		
-			call    clear_uart
-			ld      a,13 : call senduart
-			ld      a,4 : call senduart
-			call    waitforsup
-			
-			ld      a,(supbaudflag) : cp 2 : nextreg $7f,8+128 : ld hl,trysuccess : jr z,correctbaud
-			nextreg $7f,0			; set to 0 if failed 
-			ld      hl,failedsup
+		; try 2MBit 
+		ld      hl,tryhighbaud: call print_at
+		ld      a,1 : ld (curbaud),a 
+		call    setbaudrate		
+		call    clear_uart
+		ld      a,13 : call senduart
+		ld      a,4 : call senduart
+		call    waitforsup
+		
+		ld      a,(supbaudflag) : cp 2 : nextreg $7f,8+128 : ld hl,trysuccess : jr z,correctbaud
+		nextreg $7f,0			; set to 0 if failed 
+		ld      hl,failedsup
 
 printfailed call    print_rst16 : jp finish 
 correctbaud:
-			call    print_at
-			jp      finish
+		call    print_at
+		jp      finish
 
 
 flushuart:
@@ -389,4 +389,10 @@ send_command_line:
 
 
 
+;////////////////////////
+;// checkmd5sum 
+;// 
+;// 
+
+check_md5sum:
 

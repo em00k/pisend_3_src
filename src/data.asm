@@ -83,5 +83,7 @@ updatetext		db 13,"Baud update + rebooting pi"
 				db 13,"Use .term to confirm",0
 open_text		db "Open Pi0 UART....",0
 open_done		db "Connected!                 ",13,0
+check_md5		db "md5sum ",0 
+
 command_buffer
 		ds		256,0

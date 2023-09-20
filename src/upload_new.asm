@@ -68,10 +68,10 @@ do_file_upload:
         ld      hl,txtsize : call print_rst16
 
         ; print the filesize - filesize is in bufferfs bytes 7-10
-   		ld      de,(bufferfs+9)                         ; get the fs in hlde
+        ld      de,(bufferfs+9)                         ; get the fs in hlde
         ld      hl,(bufferfs+7)
         call    b2d32                                   ; convert to ascii 
-		ld      hl,b2dend-11                            ; point to buffer
+        ld      hl,b2dend-11                            ; point to buffer
         call    print_rst16                             ; print 
         ld      a,13 : rst 16                           ; new line 
 
@@ -106,17 +106,17 @@ file_size_ok:
         ; the result is stored in hlix, the remainder in de
         ld      (overrun), de 
         ld      b, ixh 
-        ld      c, ixl                      ; get loops into hl
+        ld      c, ixl                      ; get loops into bc
         ld      (nr_loops), bc              ; store number of loops 
         
-        ld      a, "0"
+        ld      a, "0"                      ; print the chunks 
         ld      (b2dfilc),a 
         ld      hl, (nr_loops)
         call    print_AA
         ld      a, '/'
         rst     16
         
-        ld      hl,enablecatcher : call streamuart		; this gets nextpi ready for to recieve  
+        ld      hl,enablecatcher : call streamuart		        ; prepare nextpi to receive 
         ld      hl,command_buffer : call streamuart			; and the output file 
 			      
         ld      a,'"' : call senduart					; send closing quote 
@@ -201,6 +201,9 @@ no_loops_required:
 
         ld      a,$0d : call senduart			; ctrl + c 
         ld      a,$0d : call senduart			; ctrl + c 
+
+        call    check_md5sum 
+
 
         ret 
 
