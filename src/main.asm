@@ -80,7 +80,8 @@ process_args:
         jr      z, .found_arg                   ; found start of an argument 
         jp      nz, upload_mode                 
 .found_arg:
-        ld      a,(hl)
+
+        ld      a,(hl)                          ; move to argument 
         cp      'c'
         jp      z, send_command_line
 
@@ -96,6 +97,12 @@ process_args:
         jp      upload_mode
          
 silent_key:
+        ; this sets a flag that sends without clearing uart / reinit
+        ld      a, 1                            ; 
+        ld      (silten_flag), a 
+        inc     hl 
+        inc     hl 
+        jp      process_args.parse_args
 
 upload_mode:
         call    do_file_upload
@@ -148,6 +155,7 @@ bank5orig       db      0
 bank6orig       db      0
 bank7orig       db      0
 overrun		dw      0000
+silent_key      db      0 
 ;------------------------------------------------------------------------------
 ; Stack reservation
 STACK_SIZE      equ     100
