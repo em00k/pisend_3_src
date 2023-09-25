@@ -85,6 +85,9 @@ process_args:
         cp      'c'
         jp      z, send_command_line
 
+        cp      'e'                             ; send command line and echo output
+        jp      z, send_command_line_echo
+
         cp      'q'
         jp      z, hard_clear_uart 
 
@@ -99,7 +102,7 @@ process_args:
 silent_key:
         ; this sets a flag that sends without clearing uart / reinit
         ld      a, 1                            ; 
-        ld      (silten_flag), a 
+        ld      (silent_key_flag), a 
         inc     hl 
         inc     hl 
         jp      process_args.parse_args
@@ -155,7 +158,7 @@ bank5orig       db      0
 bank6orig       db      0
 bank7orig       db      0
 overrun		dw      0000
-silent_key      db      0 
+silent_key_flag db      0 
 ;------------------------------------------------------------------------------
 ; Stack reservation
 STACK_SIZE      equ     100
@@ -178,4 +181,4 @@ end_of_main:
         ; SAVENEX CLOSE
 
         savebin "p3", $2000, end_of_main-$2000
-        ; savebin "h:/dot/p3", $2000, end_of_main-$2000
+        savebin "h:/dot/p3", $2000, end_of_main-$2000

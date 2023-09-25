@@ -1,5 +1,8 @@
 do_file_upload:		
 
+        ; clear the top of the screen 
+        call    clear_screen
+
     ; find the current baud 
 
         ld      a, $7F                  ; user register 
@@ -202,13 +205,57 @@ no_loops_required:
         ld      a,$0d : call senduart			; ctrl + c 
         ld      a,$0d : call senduart			; ctrl + c 
 
-       ;  call    check_md5sum 
+
+        call    delay 
+
+        call    check_md5sum 
+        call    read_uart_print
 
 
         ret 
 
 nr_loops:
         dw 00 
+
+check_md5sum:
+        ld      a, 13 : rst 16                          ; new line
+
+        ld      hl,file_hash_txt
+        call    print_rst16
+
+        ld      hl,echo_off 
+        call    streamuart 
+        ld      a,$0a : call senduart			; make sure a return was sent 
+     ;   ld      a,$0d : call senduart			; doubley make sure 
+        call    flushuart
+        call    flushuart
+        
+        ld      hl, check_md5_txt                       ; send command line
+        call    streamuart
+
+        ld      hl,command_buffer                       ; send filename 
+        call    streamuart
+
+        ld      hl, check_md5_end 
+        call    streamuart
+
+        ld      hl, get_fsize_txt
+        call    streamuart
+        
+        ld      hl,command_buffer                       ; send filename 
+        call    streamuart
+        
+        ld      hl,get_fsize_end                       ; send filename 
+        call    streamuart
+
+
+        ld      a,$0a : call senduart			; make sure a return was sent 
+     ;   ld      a,$0d : call senduart			; doubley make sure 
+        ld      hl,echo_on
+        call    streamuart 
+        ld      a,$0a : call senduart			; make sure a return was sent 
+
+        ret
 
 
 update_info:

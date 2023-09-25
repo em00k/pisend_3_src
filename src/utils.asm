@@ -319,3 +319,27 @@ cansub:
 			jr nz,div32_16loop ; 12/7
 			ret   ; 1
 	
+
+clear_screen:
+
+			ld		hl, blankline_at 
+			call 	print_at
+
+			ld 		b, 8 
+.loop: 
+			push 	bc
+			ld		hl, blankline_txt
+			call 	print_rst16
+			pop 	bc 
+			djnz	.loop 
+
+			ld		hl, blankline_at 
+			call 	print_at
+
+			ret 
+
+
+;//////////////////////////////////
+;// search_uart_hl
+;// in HL address string to catch in uart 
+;// 

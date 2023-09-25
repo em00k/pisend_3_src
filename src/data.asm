@@ -83,7 +83,25 @@ updatetext		db 13,"Baud update + rebooting pi"
 				db 13,"Use .term to confirm",0
 open_text		db "Open Pi0 UART....",0
 open_done		db "Connected!                 ",13,0
-check_md5		db "md5sum ",0 
+check_md5_txt	db 'printf "\xFF\xFF" > /tmp/_ps.txt',$0a,'md5sum ',0 
+check_md5_end	db " | awk '{print $1}' >> /tmp/_ps.txt",$0a,0
+get_fsize_txt	db 'echo "Bytes uploaded : " >> /tmp/_ps.txt',$0a
+				db 'stat -c "%s" "',0
+				; stream fname
+get_fsize_end	db '" >> /tmp/_ps.txt',13,10
+				db 'printf "\xFE" >> /tmp/_ps.txt',$0a
+cat_output		db "cat /tmp/_ps.txt",0
+blankline_at	db 	22, 0, 0 , 255 
+blankline_txt	ds	32, 32
+				db	0
+echo_off		db "stty -echo",13,0
+echo_on			db "stty echo",13,0
 
+file_hash_txt	db 13,13,"MD5hash:",13,0
+
+command_ln_txt	db 'printf "\xFF\xFF" > /tmp/_ps.txt',$0a,0
+
+command_ln_txt2	db ' >> /tmp/_ps.txt',$0a 
+				db 'printf "\xFE" >> /tmp/_ps.txt',$0a,0
 command_buffer
-		ds		256,0
+				ds		256,0
