@@ -209,8 +209,13 @@ no_loops_required:
         call    delay 
 
         call    check_md5sum 
-        call    read_uart_print
+        call    read_uart_bank
 
+        ld      hl,$a000
+
+        ei 
+        call 	print_rst16 
+        di
 
         ret 
 

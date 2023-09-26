@@ -100,8 +100,11 @@ echo_on			db "stty echo",13,0
 file_hash_txt	db 13,13,"MD5hash:",13,0
 
 command_ln_txt	db 'printf "\xFF\xFF" > /tmp/_ps.txt',$0a,0
-
-command_ln_txt2	db ' >> /tmp/_ps.txt',$0a 
+				; stream command line
+command_ln_txt2	db ' &>> /tmp/_ps.txt',$0a 
 				db 'printf "\xFE" >> /tmp/_ps.txt',$0a,0
+
+
+
 command_buffer
 				ds		256,0

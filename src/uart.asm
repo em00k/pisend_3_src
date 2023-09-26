@@ -25,20 +25,24 @@ senduart:
 ;// read & print uart 
 ;// 
 
-read_uart_print:
+read_uart_bank:
 
 ; 	; 
-			ei
+			; ei
 			call	wait_for_string						; wait string is prefixed 
-			ld 		de, 5000							; delay to loop before timeouts
+			ld 		de, 50000							; delay to loop before timeouts
 			ret 	c 									; if carry we failed to locate string
+			ld		ix, $a000
 
 .read_loop
 
-			dec 	de									; decrease the timeout 
-			ld		d, a						
-			or 		e 		
-			ret		z									; return if zero 
+			push	ix
+			pop		hl
+			ld 		a, h 
+			cp 		$30 + $A0
+			jr		z, .done_md5
+			
+			call	.delay 
 
 			ld 		bc, UART_TX_P_133B
 			in		a, (c)
@@ -54,7 +58,10 @@ read_uart_print:
 			jr 		nz, 2F
 
 			ld 		a, 13								; print a CR 
-			rst 	16 
+			;rst 	16 
+
+			ld 		(ix+0), a 
+			inc		ix
 
 			jr		.read_loop
 2:			
@@ -64,7 +71,9 @@ read_uart_print:
 			cp 		$fe									; is it END marker? 
 			jr		z, .done_md5						; yes we are done
 			
-			rst 	16									; print byte 
+			; rst 	16									; print byte 
+			ld 		(ix+0), a 
+			inc		ix
 .skip_char 
 
 			cp 		$0									; was it zero
@@ -74,11 +83,32 @@ read_uart_print:
 
 .done_md5:
 			ld 		a, 13 								; lets do a LF 
-			rst 	16 					
-			di 
+			;rst 	16 		
+			ld 		(ix+1), a 
+			xor 	a
+			ld 		(ix+2), a 
+			; di 
 			ret 										; all done 
 
 
+.delay:
+			ld 		a, (count_down)
+			dec 	a
+			ld 		(count_down), a 
+			ret 	nz 
+
+			ld 		a, 3
+			ld 		(count_down), a 
+			dec 	de									; decrease the timeout 
+			ld		d, a						
+			or 		e 		
+			jp		z,.timeout									; return if zero 
+			ret 
+.timeout:
+			LOG "TIME OUT"
+			ret 
+count_down:
+			db 3
 ;////////////////////////////////////////////////
 ;// wait_for_string from uart 
 ;// in HL address string to catch 
@@ -86,43 +116,43 @@ read_uart_print:
 
 wait_for_string:   
 			ld 		de, 50000							; delay to loop before timeouts
-			ld 		hl,beg_txt			; string to search 
-.uartlp		ld      bc,UART_RX_P_143B	; set bc to RECIEVE uart port 
+			ld 		hl,beg_txt							; string to search 
+.uartlp		ld      bc,UART_RX_P_143B					; set bc to RECIEVE uart port 
 
-			in      a,(c)				; read byte from uart 
+			in      a,(c)								; read byte from uart 
 
 
-			ld 		b, a 				; use this to debug print 
-			cp 		$0a					; skip $0a 
+			ld 		b, a 								; use this to debug print 
+			cp 		$0a									; skip $0a 
 			jr 		z, 1F
 		;	rst 	16 					
 1:			ld 		a, b 
 			
-			cp 		(hl)				; does a = what is at (hl)
+			cp 		(hl)								; does a = what is at (hl)
 			
-			jr 		nz,.notachar		; it did not match  
+			jr 		nz,.notachar						; it did not match  
 
 			; call    delay 				; lets take a small break 
 
-			inc     hl					; check if we're at the end of our string
-			ld 		a,(hl)				; is it ZERO 
+			inc     hl									; check if we're at the end of our string
+			ld 		a,(hl)								; is it ZERO 
 			or 		a 
-			jr		z,.matched			; we reached the end of the string
+			jr		z,.matched							; we reached the end of the string
 			jr 		.wait_loop
 
 .notachar:	and     7 					
-			out	    (254),a             			; Set border color
-			ld 		hl,beg_txt			; string to search 
+			out	    (254),a             				; Set border color
+			ld 		hl,beg_txt							; string to search 
 .wait_loop:
-			dec     de                              ; how long should we wait? when de = 0 we're done
+			dec     de                              	; how long should we wait? when de = 0 we're done
             ld      a, d 
             or      e 
           ;  jr      z,.timed_out1                   
 
            ; call    RasterWait 
 
-			ld	    bc,UART_TX_P_133B               ; open tranfer port 
-			in		a,(c) : and 1 : cp 1					; wait for a new byte
+			ld	    bc,UART_TX_P_133B               	; open tranfer port 
+			in		a,(c) : and 1 : cp 1				; wait for a new byte
 			jp      nz,.wait_loop
             
 			
@@ -531,37 +561,47 @@ send_command_line:
 send_command_line_echo:
 
 			inc 	hl
-			ld 		(commandline_buffer),hl 
+			inc 	hl
+			ld 		(commandline_buffer),hl 			; move command line over "-e "
 
 			; call 	open_uart
 			; call 	clear_uart
 
-			ld 		a,$0d : call senduart
+			ld 		a,$0d : call senduart				; make sure we're reading to write to the tty
 			
-			ld      hl,echo_off 
+			ld      hl,echo_off 						; echo off 
     	    call    streamuart 
-	        ld      a,$0a : call senduart			; make sure a return was sent 
 
-			ld		hl,command_ln_txt		; send flag bytes
+	        ld      a,$0a : call senduart				; make sure a return was sent 
+
+			ld		hl,command_ln_txt					; send flag bytes \xFF
 			call	streamuart
 
-			ld 		hl, (commandline_buffer)
+			ld 		hl, (commandline_buffer)			; send the command 
 			call	streamuart
+			
+			;ld 		a,$0a : call senduart
 
-			ld 		hl, command_ln_txt2
+			ld 		hl, command_ln_txt2					; end flags
 			call 	streamuart
 
-			ld 		hl, cat_output 
+			ld 		hl, cat_output 						; cat the output 
 			call 	streamuart
 
 			ld 		a,$0a : call senduart
 
-			ld      hl,echo_on
+			ld      hl,echo_on							; echo bank on 
         	call    streamuart 
 
-       		ld      a,$0a : call senduart			; make sure a return was sent 
+       		ld      a,$0a : call senduart				; make sure a return was sent 
 
-			call 	read_uart_print
+			call 	read_uart_bank
+
+			ld 		hl,$a000							; print output 
+			
+			ei 
+			call 	print_rst16 
+			di 
 
 			jp 		finish
 
