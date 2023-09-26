@@ -6,7 +6,7 @@ Sources for pisend 3
 
         .p3 -q 
 
-    - clears uart and determines baud rate
+    clears uart and determines baud rate
 
 
         .p3 [filename]
