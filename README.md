@@ -22,8 +22,10 @@ Sources for pisend 3
 - not implemented 
 
     reserving banks 
+
     memory protection 
-    -s 
+
+    -s silent key
 
 
 
