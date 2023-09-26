@@ -5,6 +5,7 @@ Sources for pisend 3
 - whats implemented 
 
     .p3 -q 
+    
         clears uart and determines baud rate
 
     .p3 [filename]
