@@ -27,6 +27,7 @@ Sources for pisend 3
         .p3 -U
 
     swaps between low and high baud rates 
+        (currently 115,200 & 576,000)
 
 
 - not implemented 
