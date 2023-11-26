@@ -97,6 +97,11 @@ blankline_txt	ds	32, 32
 echo_off		db "stty -echo",13,0
 echo_on			db "stty echo",13,0
 
+set_tty_sp		db 'stty -F /dev/ttyAMA0 ',0
+
+; get tty baud 
+				db "stty </dev/ttyAMA0",0
+
 file_hash_txt	db 13,13,"MD5hash:",13,0
 
 command_ln_txt	db 'printf "\xFF\xFF" > /tmp/_ps.txt',$0a,0
@@ -104,7 +109,12 @@ command_ln_txt	db 'printf "\xFF\xFF" > /tmp/_ps.txt',$0a,0
 command_ln_txt2	db ' &>> /tmp/_ps.txt',$0a 
 				db 'printf "\xFE" >> /tmp/_ps.txt',$0a,0
 
+send_script_txt	db 'chmod +x ',0 
+				; stream filename 
+send_script_end	db $0a,0
 
+set_speed_buffer
+				db 0,0,0
 
 command_buffer
 				ds		256,0

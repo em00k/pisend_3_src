@@ -11,12 +11,12 @@
         DEVICE ZXSPECTRUMNEXT
         CSPECTMAP "pisend_src.map"
 
-        DEFINE VERS "2003.9.18.1"
+        DEFINE VERS "2003.10.6.1"
         DEFINE DEBUGLOG 
 
         org     $2000
         jp      main 
-        ;db      ".pisend-3.em00k.",VERS
+        db      ".pisend-3.em00k.",VERS
         include "hardware.inc"
         include "macros.asm"
 
@@ -55,6 +55,10 @@ main:
         jp      finish
 
 process_args:
+        ld a, $57 : call getreg : ld (bank7orig),a
+        call getbank : ld (bank7),a 
+        ld a,(bank7) : nextreg $57,a
+
         ld      sp, $fffe                   ; some space I found....
 
         ld      hl, (command_line)               ; ensure hl is pointing to command_line
@@ -91,11 +95,20 @@ process_args:
         cp      'q'
         jp      z, hard_clear_uart 
 
+        cp      'S'
+        jp      z, send_script
+
         cp      's'
         jr      z, silent_key
 
         cp      'U'
         jp      z, swap_pi_baud
+
+        cp      'b'
+        jp      z, set_baud_speed 
+
+        cp      'l'
+        jp      z, show_baud_speeds 
 
         jp      upload_mode
          
@@ -110,6 +123,7 @@ silent_key:
 upload_mode:
         call    do_file_upload
 
+
 ;------------------------------------------------------------------------------
 ; Epilogue 
         ; ld a,(bank3orig) : nextreg MMU3_6000_NR_53, a
@@ -120,12 +134,14 @@ upload_mode:
 
 finish:	
 
-        di 	
+        di 
+        ld      a, (bank7)
+        call    free						; now safe to freebanks
+	
 fixstack:	
         ld      sp,0000	
 ;         pop     af
 ;         ex      af,af' 
-;       ;  call    freebank						; now safe to freebanks
 ;         pop     bc,de,hl
 ;         exx 
 ;         pop     af,bc,de,hl,ix,iy
@@ -136,6 +152,55 @@ fixstack:
 
 ; END OF PROGRAM 
 
+show_baud_speeds:
+
+        ld      hl,baud_help_txt
+        call    print_rst16
+        xor     a 
+        ld      (show_loop),a  
+        ld      a, 13 : rst 16 
+.show_loop:
+
+        ld      a,(show_loop)
+        call    print_A
+
+        ld      a, 32 : rst 16 
+
+        ld      a,(show_loop)
+        ld 	hl, baud_txt
+        add	hl,a 
+        add	hl,a 
+
+        ld	a,(hl)					; (hl) > hl
+        inc	hl
+        ld 	h,(hl)
+        inc	hl 
+        ld 	l,a								; hl now points to baud ascii +zero       
+        call    print_rst16             ; print text 
+
+        ld      a,(show_loop)
+        or      a 
+        jr      nz, .not_def
+        LOG     "    Default"
+        jr      .no_lf
+.not_def:
+        ld      a, 13 : rst 16 
+.no_lf:
+        ld      a,(show_loop)
+        inc     a
+        ld      (show_loop),a 
+        cp      8
+        jp      z,finish
+
+        jp      .show_loop
+show_loop:
+        db      0 
+baud_help_txt:
+        db ".p3 -b [n]",13
+        db "This will set the baud rate    ",13
+        db "between the pi0 and Next. Hard ",13
+        db "reset the pi to go back to def. ",13,13,0
+      
 ;------------------------------------------------------------------------------
 ; includes
 
@@ -145,6 +210,7 @@ fixstack:
         include "base64.asm"
         include "upload_new.asm"
         include "data.asm"
+        include "save_blob.asm"
 
 ;------------------------------------------------------------------------------
 ; variables 

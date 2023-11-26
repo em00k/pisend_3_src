@@ -88,6 +88,7 @@ getbank:
 			jr .notfailed
 
 .failed:		; added this for when working in CSpect in
+			LOG "FAILED TO RESERVER BANK"
 			ld a,34
 			;ld hl,bank
 			;dec (hl)
@@ -338,8 +339,65 @@ clear_screen:
 
 			ret 
 
+Reg2Asc:
+		; hl number to print 
+		; Asciibuffer will contain 
+		;ld		bc,-10000
+		;call	Num1
+		;ld		bc,-1000
+		;call	Num1
+		ld		bc,-100
+		call	Num1
+		ld		c,-10
+		call	Num1
+		ld		c,-1
+Num1:	ld		a,'0'-1
+Num2:	inc		a
+		add		hl,bc
+		jr		c,Num2
+		sbc		hl,bc
+		rst 	16 
+		ret 
 
-;//////////////////////////////////
-;// search_uart_hl
-;// in HL address string to catch in uart 
-;// 
+	
+;////////////////////////////////////////////////
+;// convert string to HL  
+;// de = start of string  
+;// out hl = number 
+;// Taken from Remy Sharp's http https://github.com/remy/next-http/blob/911673f56b806c76762ca68c891d8aeb1c929f6d/src/utils.asm#L92
+
+string_to_hl:
+
+
+			ld 		hl, 0				; flatten hl 
+.convLoop:
+			ld 		a, (de)				; get digit from left 
+			or 		a					; is it 0
+			ret 	z					; yes then exit / return 
+
+			sub		$30					; sub $30 to get 0-9 from a 
+			ret		c					; exit if a is less $30
+
+			scf							; set cf
+			cp 		$0a					; if a > 10 error 
+			jr 		nc, .error
+
+			inc 	de					; move to next string char 
+
+			ld 		b, h				
+			ld 		c, l
+
+			add 	hl, hl				; (HL * 4 + HL) * 2 = HL * 10
+			add 	hl, hl
+			add 	hl, bc
+			add 	hl, hl
+
+			add 	a, l
+			ld 		l, a
+			jr 		nc, .convLoop
+			inc 	h
+			jr 		.convLoop
+
+.error:
+			scf
+			ret
