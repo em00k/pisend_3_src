@@ -5,6 +5,15 @@ do_file_upload:
 
     ; find the current baud 
 
+    ; open the file 
+
+        call    setdrv 
+        ld      ix, command_buffer
+        call    openfile
+        ld      hl, command_buffer+2
+        call    getfilesize		; get size of file into bufferfs
+        jp      c, fail_to_open
+
         ld      a, $7F                  ; user register 
         call    getreg 
         ld      b, a 
@@ -35,37 +44,34 @@ do_file_upload:
 
     ; now we will backup current mmu slots 
 
-        ld a, $53 : call getreg : ld (bank3orig),a	          
-        ld a, $54 : call getreg : ld (bank4orig),a	          
-        ld a, $55 : call getreg : ld (bank5orig),a	          
-        ld a, $56 : call getreg : ld (bank6orig),a	          
-        ld a, $57 : call getreg : ld (bank7orig),a
+        ; ld a, $53 : call getreg : ld (bank3orig),a	          
+        ; ld a, $54 : call getreg : ld (bank4orig),a	          
+        ; ld a, $55 : call getreg : ld (bank5orig),a	          
+        ; ld a, $56 : call getreg : ld (bank6orig),a	          
+        ; ld a, $57 : call getreg : ld (bank7orig),a
 
     ; now request a free mmu bank 
 
-    ;    call getbank : ld (bank3),a 
-    ;    call getbank : ld (bank4),a 
-    ;    call getbank : ld (bank5),a 
-    ;    call getbank : ld (bank6),a 
+        call getbank : ld (bank3),a 
+        call getbank : ld (bank4),a 
+        call getbank : ld (bank5),a 
+        call getbank : ld (bank6),a 
     ;    call getbank : ld (bank7),a 
 
     ; and now set those banks 
 
-    ;    ld a,(bank3) : nextreg $53,a
-    ;    ld a,(bank4) : nextreg $54,a
-    ;    ld a,(bank5) : nextreg $55,a
-    ;    ld a,(bank6) : nextreg $56,a
+        ld a,(bank3) : nextreg $53,a
+        ld a,(bank4) : nextreg $54,a
+        ld a,(bank5) : nextreg $55,a
+        ld a,(bank6) : nextreg $56,a
     ;    ld a,(bank7) : nextreg $57,a
 
-    ; open the file 
 
-        call    setdrv 
-        ld      ix, command_buffer
-        call    openfile			
-        call    getfilesize		; get size of file into bufferfs
 
         ; print the filename 
         ld      hl,command_buffer : call print_fname 
+
+
 
         ; print text "Size"
         ld      hl,txtsize : call print_rst16
@@ -86,10 +92,10 @@ do_file_upload:
         ld      hl,(bufferfs+7)
         ; check for zero bytes 
         ld a,l : or h : jr z,.yes_zero
-        jr      file_size_ok
+        jr      .file_size_ok
 .yes_zero:
         ld a,e : or d : jr z,.fs_null 
-        jr      file_size_ok
+        jr      .file_size_ok
 .fs_null:
         ; exit out of routine 
         LOG     "ERROR WITH FS"
@@ -97,7 +103,7 @@ do_file_upload:
         ;pop     hl                  ; get the ret off the stack 
         ;jp      finish
 
-file_size_ok:
+.file_size_ok:
 
         ; we need to divide the filesize / buffersize 
         ; to get number of chunks and remainder 
@@ -206,18 +212,23 @@ no_loops_required:
         ld      a,$0d : call senduart			; ctrl + c 
 
 
-        call    delay 
+        call    rast_delay 
 
-        call    check_md5sum 
-        call    read_uart_bank
+       ; call    check_md5sum 
+       ; call    read_uart_bank
 
-        ld      hl,$a000
+       ; ld      hl,$a000
 
-        ei 
-        call 	print_rst16 
-        di
-
+       ; ei 
+       ; call 	print_rst16 
+       ; di
+        
         ret 
+
+fail_to_open:
+        ld      hl, failed_open
+        call 	print_rst16 
+        ret     
 
 nr_loops:
         dw 00 
@@ -282,7 +293,11 @@ show_remainder_text:
 
         ld      hl,.at
         call    print_rst16
-        ld      hl,bc : call b2d16 : ld hl,b2dend-5 : call print_rst16
+        ld      hl,bc : 
+        ld      a, b 
+        or      c 
+        ret     z               ; dont show if zero 
+        call b2d16 : ld hl,b2dend-5 : call print_rst16
         ret 
 .at:
         db      22, 7, 16, 0 

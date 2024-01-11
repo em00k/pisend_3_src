@@ -35,7 +35,7 @@ read_uart_bank:
 			ld		ix, $a000
 
 .read_loop
-
+			ld 		de, 50000							; delay to loop before timeouts
 			push	ix
 			pop		hl
 			ld 		a, h 
@@ -71,7 +71,7 @@ read_uart_bank:
 			cp 		$fe									; is it END marker? 
 			jr		z, .done_md5						; yes we are done
 			
-			; rst 	16									; print byte 
+			;rst 	16									; print byte 
 			ld 		(ix+0), a 
 			inc		ix
 .skip_char 
@@ -100,13 +100,18 @@ read_uart_bank:
 			ld 		a, 3
 			ld 		(count_down), a 
 			dec 	de									; decrease the timeout 
-			ld		d, a						
+			ld		a, d						
 			or 		e 		
 			jp		z,.timeout									; return if zero 
+
 			ret 
+
 .timeout:
 			LOG "TIME OUT"
-			ret 
+			ld 		a, 3
+			ld 		(count_down), a 
+			jp 		.done_md5
+
 count_down:
 			db 3
 ;////////////////////////////////////////////////
@@ -115,7 +120,7 @@ count_down:
 
 
 wait_for_string:   
-			ld 		de, 50000							; delay to loop before timeouts
+			ld 		de, 0							; delay to loop before timeouts
 			ld 		hl,beg_txt							; string to search 
 .uartlp		ld      bc,UART_RX_P_143B					; set bc to RECIEVE uart port 
 
@@ -144,12 +149,12 @@ wait_for_string:
 			out	    (254),a             				; Set border color
 			ld 		hl,beg_txt							; string to search 
 .wait_loop:
-			dec     de                              	; how long should we wait? when de = 0 we're done
-            ld      a, d 
-            or      e 
-          ;  jr      z,.timed_out1                   
+           	call    delay
 
-           ; call    RasterWait 
+			; dec     de                              	; how long should we wait? when de = 0 we're done
+            ; ld      a, d 
+            ; or      e 
+            ; jr      z,.timed_out1                   
 
 			ld	    bc,UART_TX_P_133B               	; open tranfer port 
 			in		a,(c) : and 1 : cp 1				; wait for a new byte
@@ -284,19 +289,19 @@ setbaudrate:
 
 baudprescale:
 
-			defw 243,248,256,260,269,278,286,234 			; was 0 - 115200 adjust for 0-7
-			DEFW 49,50,51,52,54,56,57,47 ;576000 -10
-			defw 14,14,15,15,16,16,17,14 					;2000000 -14
+		;	defw 243,248,256,260,269,278,286,234 			; was 0 - 115200 adjust for 0-7
+		;	DEFW 49,50,51,52,54,56,57,47 ;576000 -10
+		;	defw 14,14,15,15,16,16,17,14 					;2000000 -14
 
 
 			DEFW 243,248,256,260,269,278,286,234 ; Was 0 - 115200 adjust for 0-7
-			DEFW 486,496,512,521,538,556,573,469 ; 56k
-			DEFW 729,744,767,781,807,833,859,703 ; 38k
-			DEFW 896,914,943,960,992,1024,1056,864 ; 31250 (MIDI)
-			DEFW 1458,1488,1535,1563,1615,1667,1719,1406 ; 19200
-			DEFW 2917,2976,3069,3125,3229,3333,3438,2813 ; 9600
-			DEFW 5833,5952,6138,6250,6458,6667,6875,5625 ; 4800
-			DEFW 11667,11905,12277,12500,12917,13333,13750,11250 ; 2400
+			; DEFW 486,496,512,521,538,556,573,469 ; 56k
+			; DEFW 729,744,767,781,807,833,859,703 ; 38k
+			; DEFW 896,914,943,960,992,1024,1056,864 ; 31250 (MIDI)
+			; DEFW 1458,1488,1535,1563,1615,1667,1719,1406 ; 19200
+			; DEFW 2917,2976,3069,3125,3229,3333,3438,2813 ; 9600
+			; DEFW 5833,5952,6138,6250,6458,6667,6875,5625 ; 4800
+			; DEFW 11667,11905,12277,12500,12917,13333,13750,11250 ; 2400
 			DEFW 122,124,128,130,135,139,143,117 ; 230400 -8
 			DEFW 61,62,64,65,67,69,72,59 ;460800 -9
 			DEFW 49,50,51,52,54,56,57,47 ;576000 -10
@@ -304,6 +309,43 @@ baudprescale:
 			DEFW 24,25,26,26,27,28,29,23 ;1152000 -12
 			DEFW 19,19,20,20,21,21,22,18 ;1500000 -13
 			DEFW 14,14,15,15,16,16,17,14 ;2000000 -14
+
+baud_txt:
+
+	dw sp_0
+	dw sp_1
+	dw sp_2
+	dw sp_3
+	dw sp_4
+	dw sp_5
+	dw sp_6
+	dw sp_7
+	; dw sp_8
+	; dw sp_9
+	; dw sp_10
+	; dw sp_11
+	; dw sp_12
+	; dw sp_13
+	; dw sp_14
+	dw 0
+	dw 0
+
+sp_0: 	db "115200",0 			
+; sp_1: 	db "56000",0 			
+; sp_2: 	db "38000",0 			
+; sp_3: 	db "31250",0 			
+; sp_4: 	db "19200",0 			
+; sp_5: 	db "9600",0 			
+; sp_6: 	db "4800",0 			
+; sp_7: 	db "2400",0 			
+sp_1: 	db "230400",0 			
+sp_2: 	db "460800",0 			
+sp_3: 	db "576000",0 			
+sp_4: 	db "921600",0 			
+sp_5: 	db "1152000",0 			
+sp_6: 	db "1500000",0 			
+sp_7: 	db "2000000",0 			
+
 
 
 curbaud:	
@@ -466,12 +508,12 @@ waitforsup:
 			ld      de,65535
 
 			nextreg $7,1
-			call    delay                  ; wait for delay 4 frames 
+			call    rast_delay                  ; wait for delay 4 frames 
 
 readuart:   ld      bc,UART_RX_P_143B : ld hl,uartstring
 .uartlp		in      a,(c) : cp (hl) : jr nz,notachar
 
-			call    delay 
+			call    rast_delay 
 
 			inc     hl : ld a,(hl) : or a 
 			jp      z,readone
@@ -505,9 +547,27 @@ timedout:
 			nextreg $7,3
 			;pop hl : jp finish
 			ret 
-delay:			
+rast_delay:			
 			push    bc : push de : ld b,4			; we need a bit of a wait 
 .wtl		call    RasterWait : djnz .wtl : pop de : pop bc : ret 
+
+delay:
+			ld 		a, (count_down)
+			dec 	a
+			ld 		(count_down), a 
+			ret 	nz 
+
+			ld 		a, 3
+			ld 		(count_down), a 
+			dec 	de									; decrease the timeout 
+			ld		a, d						
+			or 		e 		
+			jp		z,.timeout									; return if zero 
+			ret 
+.timeout:
+			LOG "TIME OUT"
+			jp		finish 
+
 
 RasterWait:
 			push    bc 
@@ -560,21 +620,21 @@ send_command_line:
 
 send_command_line_echo:
 
-			inc 	hl
+			inc 	hl									; Step over
 			inc 	hl
 			ld 		(commandline_buffer),hl 			; move command line over "-e "
 
 			; call 	open_uart
 			; call 	clear_uart
 
-			ld 		a,$0d : call senduart				; make sure we're reading to write to the tty
+			ld 		a,$0d : call senduart				; make sure we're ready to write to the tty
 			
 			ld      hl,echo_off 						; echo off 
     	    call    streamuart 
 
 	        ld      a,$0a : call senduart				; make sure a return was sent 
 
-			ld		hl,command_ln_txt					; send flag bytes \xFF
+			ld		hl,command_ln_txt					; send flag bytes \xFF to capture output 
 			call	streamuart
 
 			ld 		hl, (commandline_buffer)			; send the command 
@@ -582,7 +642,7 @@ send_command_line_echo:
 			
 			;ld 		a,$0a : call senduart
 
-			ld 		hl, command_ln_txt2					; end flags
+			ld 		hl, command_ln_txt2					; end flags to capture output 
 			call 	streamuart
 
 			ld 		hl, cat_output 						; cat the output 
@@ -603,7 +663,103 @@ send_command_line_echo:
 			call 	print_rst16 
 			di 
 
-			jp 		finish
+			jp		finish 
+
+
+send_script:
+			; same as upload but 
+			; LOG "START"
+			ld		hl,command_buffer+3
+			ld		de,command_buffer
+			ld 		bc,240
+			ldir
+
+			ld		hl,command_buffer
+        	call    print_rst16   
+
+			call    do_file_upload
+
+send_chmod:
+			; LOG		"Running +x "
+        	ld      a,$0a : call senduart			; make sure a return was sent 
+			ld 		hl, send_script_txt
+			call    streamuart
+			ld      hl,command_buffer                       ; send filename 
+			call    streamuart
+			ld 		hl, send_script_end
+			call    streamuart
+	        ld      a,$0a : call senduart			; make sure a return was sent 
+			jp		finish
+
+set_baud_speed:
+
+			inc 	hl 
+			inc 	hl 								; move hl to point to n from the command line -b n
+
+			ld 		a,(hl)							; get the baud rate for n 
+			ld		de, set_speed_buffer			; copy to buffer as ascii
+			ldi
+			ldi
+
+			ld		de, set_speed_buffer			; point back to txt 
+			call 	string_to_hl
+			
+			ld 		a, l
+			inc 	a 			 
+			cp 		9
+			jp		nc, show_baud_speeds
+
+			ld 		a, l 							; l will be 8 bit value
+			ld 		(curbaud),a 					; save 
+			ld		(last_good),a
+
+			ld 		a,$0d : call senduart				; make sure we're reading to write to the tty
+			ld      a,$0a : call senduart			; return on uart 
+
+			call    delay 							; small delay 
+        	
+			ld		hl, set_tty_sp					; point to db "stty -F /dev/ttyAMA0 ",0
+			call    streamuart
+
+			ld		a, (curbaud)					; jump table for baud text 
+			ld 		hl, baud_txt
+			add		hl,a 
+			add		hl,a 
+
+			ld		a,(hl)					; (hl) > hl
+			inc		hl
+			ld 		h,(hl)
+			inc		hl 
+			ld 		l,a								; hl now points to baud ascii +zero
+
+			ld 		(.baud_txt_add), hl 
+			call    streamuart						; stream to uart 
+
+			ld 		a,$0a : call senduart			; make sure a return was sent 
+			ld 		a,$0a : call senduart			; make sure a return was sent 
+
+
+			ld		hl, set_tty_sp	
+			call 	print_rst16
+			ld 		hl,(.baud_txt_add)
+			call 	print_rst16 
+			
+			call	setbaudrate
+
+			; LOG 	" BAUD SET"
+
+			ld 		hl, set_speed_buffer
+			call 	print_rst16
+
+			jp 		finish 
+
+.baud_txt_add:
+			dw 		0
+.error:
+			LOG 	"ERROR GETTING UBYTE"
+			jp 		finish 
+
+
 
 commandline_buffer:
 			dw 		0000 
