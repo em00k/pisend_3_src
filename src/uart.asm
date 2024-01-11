@@ -620,21 +620,21 @@ send_command_line:
 
 send_command_line_echo:
 
-			inc 	hl
+			inc 	hl									; Step over
 			inc 	hl
 			ld 		(commandline_buffer),hl 			; move command line over "-e "
 
 			; call 	open_uart
 			; call 	clear_uart
 
-			ld 		a,$0d : call senduart				; make sure we're reading to write to the tty
+			ld 		a,$0d : call senduart				; make sure we're ready to write to the tty
 			
 			ld      hl,echo_off 						; echo off 
     	    call    streamuart 
 
 	        ld      a,$0a : call senduart				; make sure a return was sent 
 
-			ld		hl,command_ln_txt					; send flag bytes \xFF
+			ld		hl,command_ln_txt					; send flag bytes \xFF to capture output 
 			call	streamuart
 
 			ld 		hl, (commandline_buffer)			; send the command 
@@ -642,7 +642,7 @@ send_command_line_echo:
 			
 			;ld 		a,$0a : call senduart
 
-			ld 		hl, command_ln_txt2					; end flags
+			ld 		hl, command_ln_txt2					; end flags to capture output 
 			call 	streamuart
 
 			ld 		hl, cat_output 						; cat the output 
@@ -703,10 +703,11 @@ set_baud_speed:
 
 			ld		de, set_speed_buffer			; point back to txt 
 			call 	string_to_hl
-			jp		c, show_baud_speeds
-			ld 		a, h 
-			or 		l 
-			jp		z, show_baud_speeds
+			
+			ld 		a, l
+			inc 	a 			 
+			cp 		9
+			jp		nc, show_baud_speeds
 
 			ld 		a, l 							; l will be 8 bit value
 			ld 		(curbaud),a 					; save 

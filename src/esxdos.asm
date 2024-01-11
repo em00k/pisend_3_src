@@ -63,6 +63,16 @@ loadfile:
 			ld a,(handle)
 			call fread		
 			ret 
+getfilesize_stat: 
+		; ix = filespec hl in dotland 
+		ld 		de,bufferfs
+		ld 		a,'*'
+		rst 	$08
+		db 		$ac
+		jr 		nc,successfs
+		jr 		c,failopen
+		;a = error code 
+		jr 		donefsizefs
 
 getfilesize: 
 		; ix = filespec hl in dotland 

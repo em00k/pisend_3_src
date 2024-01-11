@@ -11,7 +11,7 @@
         DEVICE ZXSPECTRUMNEXT
         CSPECTMAP "pisend_src.map"
 
-        DEFINE VERS "2003.10.6.1"
+        DEFINE VERS "2024.01.11.1"
         DEFINE DEBUGLOG 
 
         org     $2000
@@ -31,14 +31,21 @@ main:
        
         nextreg TURBO_CONTROL_NR_07, 3          ; set to 28mhz 
         ld      (command_line),hl                ; save cmd line add
+       
+        push    iy,ix,hl,de,bc,af               ; we need to check we return to basic cleanly
+        exx 	
+        push    hl,de,bc                        ; so i reserve everything 
+        ex      af,af' 		
+        push    af
+
+        ;rst     $18                            ; this is needed to be able to post 
+        ;dw      $0daf                          ; to #2 but it breaks 64/84 mode ?!
+        ld      a, 2                            ; opens chan 2
+        rst     $18
+        dw      $1601
+
         ld      (fixstack+1),sp                 ; save stack for exit 
-
-
-        ; push    iy,ix,hl,de,bc,af               ; we need to check we return to basic cleanly
-        ; exx 	
-        ; push    hl,de,bc                        ; so i reserve everything 
-        ; ex      af,af' 		
-        ; push    af
+        ld      sp,$5BBF                        ; very temp stack 
 
         ld      hl, (command_line)               ; get start command line address 
 
@@ -55,13 +62,20 @@ main:
         jp      finish
 
 process_args:
-        ld a, $57 : call getreg : ld (bank7orig),a
-        call getbank : ld (bank7),a 
-        ld a,(bank7) : nextreg $57,a
+       
+        call    saveAllBanks                    ; save all banks 
 
-        ld      sp, $fffe                   ; some space I found....
+        ; get a new bank to move the stack into 
+        ld      a, $57                          ; get MMU7
+        call    getreg 
+        ld      (bank7orig),a                   ; save it
+        call    getbank                         ; get a new bank for mmu7
+        ld      (bank7),a 
+        ld      a,(bank7) 
+        nextreg $57,a                           ; put it in place 
+        ld      sp, $fffe                       ; some space I found....
 
-        ld      hl, (command_line)               ; ensure hl is pointing to command_line
+        ld      hl, (command_line)              ; ensure hl is pointing to command_line
         ld      de, command_buffer 
 .cmd_copy:                                      ; copy from command_line to command buffer
         ld      a, (hl)
@@ -113,7 +127,7 @@ process_args:
         jp      upload_mode
          
 silent_key:
-        ; this sets a flag that sends without clearing uart / reinit
+        ; this sets a flag to send without clearing uart / reinit
         ld      a, 1                            ; 
         ld      (silent_key_flag), a 
         inc     hl 
@@ -124,6 +138,10 @@ upload_mode:
         call    do_file_upload
 
 
+finish:	di 
+        ld      sp,$3fff
+        call    restoreAllBanks
+
 ;------------------------------------------------------------------------------
 ; Epilogue 
         ; ld a,(bank3orig) : nextreg MMU3_6000_NR_53, a
@@ -132,21 +150,20 @@ upload_mode:
         ; ld a,(bank6orig) : nextreg MMU6_C000_NR_56, a
         ; ld a,(bank7orig) : nextreg MMU7_E000_NR_57, a 
 
-finish:	
 
-        di 
-        ld      a, (bank7)
-        call    free						; now safe to freebanks
-	
-fixstack:	
-        ld      sp,0000	
-;         pop     af
-;         ex      af,af' 
-;         pop     bc,de,hl
-;         exx 
-;         pop     af,bc,de,hl,ix,iy
+
+fixstack	
+        ld      sp,0000			
+        
+        pop     af      
+        ex      af,af' 
+        pop     bc,de,hl
+        exx 
+        pop     af,bc,de,hl,ix,iy
 
         xor     a 
+        ld a,1
+        scf 
         ei 
         ret 
 

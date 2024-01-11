@@ -7,13 +7,38 @@ getreg:
 ; IN A > Register to read 
 ; OUT A < Value of Register 
     
-    push    bc                                  ; save BC 
-    ld      bc, TBBLUE_REGISTER_SELECT_P_243B
-    out     (c), a 
-    inc     b 
-    in      a, (c) 
-    pop     bc 
-    ret 
+			push    bc                                  ; save BC 
+			ld      bc, TBBLUE_REGISTER_SELECT_P_243B
+			out     (c), a 
+			inc     b 
+			in      a, (c) 
+			pop     bc 
+			ret 
+
+
+saveAllBanks:
+			ld 		b, 6
+			ld 		a, 2 
+1			push	bc 
+			push 	af 
+			call 	saveBankSlot
+			pop		af 
+			inc 	a 
+			pop 	bc 
+			djnz	1B
+			ret 
+
+restoreAllBanks:
+			ld 		b, 6
+			ld 		a, 2 
+2			push	bc 
+			push 	af 
+			call 	restoreBankSlot
+			pop		af 
+			inc 	a 
+			pop 	bc 
+			djnz	2B
+			ret 
 
 
 saveBankSlot: 
@@ -22,12 +47,12 @@ saveBankSlot:
 ; OUT nothing 
 ; USES : hl, a 
 
-    ld      hl, slotBuffers
-    add     hl, a 
-    add     $50         
-    call    getRegister
-    ld      (hl), a 
-    ret 
+			ld      hl, slotBuffers
+			add     hl, a 
+			add     $50         
+			call    getRegister
+			ld      (hl), a 
+			ret 
 
 restoreBankSlot: 
 ; Restores the buffer to SLOT 
@@ -35,18 +60,18 @@ restoreBankSlot:
 ; OUT nothing 
 ; USES : hl, a 
 
-    ld      hl, slotBuffers
-    add     hl, a
-    add     $50 
-    ld      (.bank+2), a 
-    ld      a, (hl)      
+			ld      hl, slotBuffers
+			add     hl, a
+			add     $50 
+			ld      (.bank+2), a 
+			ld      a, (hl)      
 .bank: 
-    nextreg $50, a 
-    ret 
+			nextreg $50, a 
+			ret 
 
 
 slotBuffers:
-    ds      7, 0 
+    db      $ff, $ff, $0a, $0b, $04, $05, $00, $01  ; default
 
 
 freebank:
@@ -58,14 +83,13 @@ freebank:
 			ld a,(bank7) : call free 
 			ret 
 
-free:		;ld (freeend+1),sp 
-			ld hl,$0003  	; H=banktype (ZX=0, 1=MMC); L=reason (1=allocate)
+free:		ld hl,$0003  	; H=banktype (ZX=0, 1=MMC); L=reason (1=allocate)
 			ld e,a
 			exx
 			ld c,7 			; RAM 7 required for most IDEDOS calls
 			ld de,$01bd 	; IDE_BANK
 			rst $8 : defb $94 ; M_P3DOS
-freeend: 	;ld sp,00000
+freeend: 	
 			ret
 
 bank3       db 0 
@@ -326,7 +350,7 @@ clear_screen:
 			ld		hl, blankline_at 
 			call 	print_at
 
-			ld 		b, 8 
+			ld 		b, 22
 .loop: 
 			push 	bc
 			ld		hl, blankline_txt
