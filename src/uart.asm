@@ -199,8 +199,13 @@ senduartmemory:
 			ld 		de,(filesize)				; chunk size 
 			ld 		bc,$133b					; TX 
 outb:	
-			in a,(c) : and %10 : jr nz,outb		; check if busy? if so loop 
-			ld a,(hl) : inc hl : out (c),a		; else send byte to uart 
+			in 		a,(c)
+			; and 	%10
+			bit 	4, a
+			jr 		z,outb		; check if busy? if so loop 
+			ld 		a,(hl)
+			inc 	hl
+			out 	(c),a		; else send byte to uart 
 
 			and 7 : out (254),a   				; border effect 
 			ld 		a,(dolinefeed)
@@ -226,6 +231,16 @@ nolinefeed:
 			pop de : pop hl : pop bc 
 			ret 
 
+_hltohl:
+			add		a, a 
+			add		hl,a 
+
+			ld		a,(hl)					; get speed from (hl) > hl
+			inc		hl
+			ld 		h,(hl)
+			inc		hl 
+			ld 		l,a						; hl = speed to print 
+			ret 
 
 
 ; sets baud rat 
@@ -320,24 +335,11 @@ baud_txt:
 	dw sp_5
 	dw sp_6
 	dw sp_7
-	; dw sp_8
-	; dw sp_9
-	; dw sp_10
-	; dw sp_11
-	; dw sp_12
-	; dw sp_13
-	; dw sp_14
+
 	dw 0
 	dw 0
 
-sp_0: 	db "115200",0 			
-; sp_1: 	db "56000",0 			
-; sp_2: 	db "38000",0 			
-; sp_3: 	db "31250",0 			
-; sp_4: 	db "19200",0 			
-; sp_5: 	db "9600",0 			
-; sp_6: 	db "4800",0 			
-; sp_7: 	db "2400",0 			
+sp_0: 	db "115200",0 						
 sp_1: 	db "230400",0 			
 sp_2: 	db "460800",0 			
 sp_3: 	db "576000",0 			
@@ -345,7 +347,6 @@ sp_4: 	db "921600",0
 sp_5: 	db "1152000",0 			
 sp_6: 	db "1500000",0 			
 sp_7: 	db "2000000",0 			
-
 
 
 curbaud:	
@@ -418,33 +419,97 @@ hard_clear_uart:
 		;	LOG "CLEAR UART"
 			call    clear_uart
 		;	LOG "SET BAUD"
-			ld      a,3 : ld bc,UART_TX_P_133B : out (c),a 
-			call    setbaud115200
-			nextreg $7f,0
-			ld      hl,trylowboaud : call print_at
-			ld      a,13 : call senduart
-			ld      a,4 : call senduart
+
+			ld 		hl, tryingtext
+			call 	print_at
+
+			ld      a,13
+			ld 		bc,UART_TX_P_133B
+			out 	(c),a 
+
+			ld		a, 0 					; start at lowest speed 
+
+.baud_test_loop:
 			
-			; try 115200 first 
+			ld 		(.testspeed), a 		; keep a safe for now 
+
+			ld 		hl, baud_txt			; point to speed we are testing
+			call 	_hltohl
+			
+			call 	print_rst16				; print it 
+
+			ld 		a, (.testspeed) 		; bring back test speed baud
+			ld 		(curbaud), a 
+
+			call    setbaudrate				; set the UART to baud 
+			
+			nextreg $7f,0					; slow down cpu 
+
+			; send some test control chars to the uart 
+			ld      a,13 : call senduart	; send control codes
+			ld      a,4 : call senduart
 			call    waitforsup				; sup flag will = 2 if a sup was found. 
-			ld      a,(supbaudflag) : cp 2 : nextreg $7f,2 : ld hl,trysuccess : jr z,correctbaud
+
+			nextreg $7f,2
+			ld      a,(supbaudflag)
+			cp 		2 
+			jr 		z,correctbaud			; correct baud found
+
+			ld 		a, 13 
+			rst 	16
+			
+			ld 		a,(.testspeed)			; increase the pointer to our baud speeds
+			inc 	a
+			cp 		8 						; if we are at 8 then we have run out of speeds!
+			
+			jp 		z,.last_baudrate 		; jump to error message 
+			
+			jr 		.baud_test_loop			; else lets loop with a = new baud pointer 
 
 			; try 2MBit 
-			ld      hl,tryhighbaud: call print_at
-			ld      a,1 : ld (curbaud),a 
-			call    setbaudrate		
-			call    clear_uart
-			ld      a,13 : call senduart
-			ld      a,4 : call senduart
-			call    waitforsup
+			; ld 		a, 22 : rst 16 
+			; ld		a,32 
+			; ld 		a, (23689)
+			; sub 	23
+			; rst 	16
+			; xor 	a
+			; rst 	16 
+			; ld      hl,tryhighbaud: call print_at
+
+			; ld      a,1 : ld (curbaud),a 
+			; call    setbaudrate		
+			; call    clear_uart
+			; ld      a,13 : call senduart
+			; ld      a,4 : call senduart
+			; call    waitforsup
 			
-			ld      a,(supbaudflag) : cp 2 : nextreg $7f,8+128 : ld hl,trysuccess : jr z,correctbaud
-			nextreg $7f,0			; set to 0 if failed 
+			; ld      a,(supbaudflag) : cp 2 : nextreg $7f,8+128 : ld hl,trysuccess : jr z,correctbaud
+			; nextreg $7f,0			; set to 0 if failed 
+.testspeed	db 		0 
+.last_baudrate:
 			ld      hl,failedsup
 
 printfailed call    print_rst16 : jp finish 
+
 correctbaud:
+			ld 		hl, connect_txt
 			call    print_at
+
+			ld 		a, (hard_clear_uart.testspeed)
+			ld 		(curbaud), a 
+			ld 		hl, baud_txt			; point to speed we are testing
+			call 	_hltohl
+			call	print_rst16
+
+			ld 		a, 13 : rst 16  
+			
+			; 		lets save the config 
+			
+			; ld      sp,$5BBF
+
+			ld 		ix, config_file_name 
+			call 	savefile 
+
 			jp      finish
 
 

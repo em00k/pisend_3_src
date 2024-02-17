@@ -11,10 +11,11 @@
         DEVICE ZXSPECTRUMNEXT
         CSPECTMAP "pisend_src.map"
 
-        DEFINE VERS "2024.01.11.1"
+        DEFINE VERS "2024.17.02.02"
         DEFINE DEBUGLOG 
 
         org     $2000
+
         jp      main 
         db      ".pisend-3.em00k.",VERS
         include "hardware.inc"
@@ -40,12 +41,14 @@ main:
 
         ;rst     $18                            ; this is needed to be able to post 
         ;dw      $0daf                          ; to #2 but it breaks 64/84 mode ?!
-        ld      a, 2                            ; opens chan 2
-        rst     $18
-        dw      $1601
+        ; ld      a, 2                            ; opens chan 2
+        ; rst     $18
+        ; dw      $1601
 
         ld      (fixstack+1),sp                 ; save stack for exit 
         ld      sp,$5BBF                        ; very temp stack 
+
+        call    saveAllBanks                    ; save all banks 
 
         ld      hl, (command_line)               ; get start command line address 
 
@@ -63,7 +66,6 @@ main:
 
 process_args:
        
-        call    saveAllBanks                    ; save all banks 
 
         ; get a new bank to move the stack into 
         ld      a, $57                          ; get MMU7
@@ -91,6 +93,10 @@ process_args:
 
 .found_eol:
         ld      hl, command_buffer
+
+
+; Parse Arguments 
+
 .parse_args:
         ld      a, (hl)
         inc     hl 
@@ -136,12 +142,19 @@ silent_key:
 
 upload_mode:
         call    do_file_upload
-
+        
+        jr $
 
 finish:	di 
-        ld      sp,$3fff
-        call    restoreAllBanks
+        ;ld      ix,config_file_name
+        ;call    savefile
 
+        ld      sp,$5BBF
+
+        call    restoreAllBanks
+        call    freebanks
+        
+        
 ;------------------------------------------------------------------------------
 ; Epilogue 
         ; ld a,(bank3orig) : nextreg MMU3_6000_NR_53, a
@@ -149,8 +162,6 @@ finish:	di
         ; ld a,(bank5orig) : nextreg MMU5_A000_NR_55, a
         ; ld a,(bank6orig) : nextreg MMU6_C000_NR_56, a
         ; ld a,(bank7orig) : nextreg MMU7_E000_NR_57, a 
-
-
 
 fixstack	
         ld      sp,0000			
@@ -162,7 +173,7 @@ fixstack
         pop     af,bc,de,hl,ix,iy
 
         xor     a 
-        ld a,1
+        ld      a,1
         scf 
         ei 
         ret 
@@ -226,7 +237,7 @@ baud_help_txt:
         include "esxdos.asm"
         include "base64.asm"
         include "upload_new.asm"
-        include "data.asm"
+        include "data_new.asm"
         include "save_blob.asm"
 
 ;------------------------------------------------------------------------------
@@ -244,7 +255,7 @@ overrun		dw      0000
 silent_key_flag db      0 
 ;------------------------------------------------------------------------------
 ; Stack reservation
-STACK_SIZE      equ     100
+STACK_SIZE      equ     200
 
 stack_bottom:
         defs    STACK_SIZE * 2
@@ -264,4 +275,4 @@ end_of_main:
         ; SAVENEX CLOSE
 
         savebin "p3", $2000, end_of_main-$2000
-        savebin "h:/dot/p3", $2000, end_of_main-$2000
+    ;    savebin "h:/dot/p3", $2000, end_of_main-$2000
