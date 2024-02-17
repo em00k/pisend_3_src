@@ -173,8 +173,8 @@ fixstack
         pop     af,bc,de,hl,ix,iy
 
         xor     a 
-        ld      a,1
-        scf 
+        ;ld      a,1
+        ;scf 
         ei 
         ret 
 
