@@ -64,7 +64,7 @@ openfile:
 			call 	fseek
 			ret 
 fail_open:
-			;LOG "FAILED OPEN"
+			LOG "FAILED OPEN"
 			call 	show_error
 			ret 
 loadfile: 	

@@ -113,8 +113,8 @@ getbank:
 			ld a,e 
 			jr .notfailed
 
-.failed:		; added this for when working in CSpect in
-			LOG "FAILED TO RESERVER BANK"
+.failed:	; added this for when working in CSpect in
+			;LOG "FAILED TO RESERVER BANK"
 			ld a,34
 			;ld hl,bank
 			;dec (hl)
@@ -127,6 +127,21 @@ print_version:
 			ld 		hl,version
 			call 	print_at
 			ret 
+
+
+; Check for space
+; 
+; 
+check_break:
+	xor 	a 
+	in 		a, ($fe)
+	cpl
+	and 	15
+	jr		nz,._break_pressed
+	ret
+._break_pressed:
+	LOG "BREAK"
+	jp 		finish
 
 ; Count string 
 ; IN HL > pointer to zero term string

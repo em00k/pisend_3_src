@@ -193,7 +193,7 @@ beg_txt:
 senduartmemory:
 			di 
 			push bc : push hl : push de 
-
+			
 			xor 	a
 			ld 		(dolinefeed),a 				; reset line feed flag 
 			ld 		de,(filesize)				; chunk size 
@@ -214,6 +214,7 @@ outb:
 			jr 		z,linefeed 					; then do line feed 
 			
 			ld 		(dolinefeed),a 	
+			call 	check_break
 			jr 		nolinefeed
 			
 dolinefeed: db 0 
@@ -579,7 +580,8 @@ readuart:   ld      bc,UART_RX_P_143B : ld hl,uartstring
 .uartlp		in      a,(c) : cp (hl) : jr nz,notachar
 
 			call    rast_delay 
-
+			call 	check_break 
+			
 			inc     hl : ld a,(hl) : or a 
 			jp      z,readone
 			jp      .uartlp

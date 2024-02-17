@@ -200,6 +200,8 @@ outer_loop:
         
         ; ld h,b : ld l,c : call b2d16 : ld hl,b2dend-5 : call print_rst16
 
+        call    check_break
+
         ; decrease loop counter 
         ld      hl, (nr_loops)
         dec     hl
