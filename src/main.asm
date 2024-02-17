@@ -11,7 +11,7 @@
         DEVICE ZXSPECTRUMNEXT
         CSPECTMAP "pisend_src.map"
 
-        DEFINE VERS "2024.17.02.01"
+        DEFINE VERS "2024.17.02.02"
         DEFINE DEBUGLOG 
 
         org     $2000
