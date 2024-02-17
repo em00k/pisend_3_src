@@ -15,6 +15,7 @@
         DEFINE DEBUGLOG 
 
         org     $2000
+        
         jp      main 
         db      ".pisend-3.em00k.",VERS
         include "hardware.inc"
