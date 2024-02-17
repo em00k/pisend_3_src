@@ -29,18 +29,21 @@ Sources for pisend 3
     swaps between low and high baud rates 
         (currently 115,200 & 576,000)
 
+        .p3 -s
 
-- not implemented 
+    Just sents chars to the UART, no clear or detection
 
+    Capture the output of a command to a variable v$
 
+        10 DIM v$(768)
+        20 OPEN #2, "v>v$"
+        30 .p3 -e ls
+        40 CLOSE #2
+        50 PRINT "*";v$;"*"
 
-    reserving banks 
-
-    memory protection 
-
-    -s silent key
 
 ![alt text](https://raw.githubusercontent.com/em00k/pisend_src/main/pisend3.png)
+
 
 
     
