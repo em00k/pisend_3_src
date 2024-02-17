@@ -56,7 +56,14 @@ rst1: 		ld      a,13 : rst 16
 
 			; print file size 
 			ld      de,(bufferfs+9) : ld hl,(bufferfs+7)
-			call    b2d32 : ld hl,b2dend-11 : call print_rst16
+			call    b2d32
+		2:	ld 		a, (hl)
+			cp 		' '
+			jr 		nz, 1F
+			inc 	hl
+			jr		2B
+		1:	call print_rst16
+
 rst2:		ld      a,13 : rst 16
 			
 			; file size is in bufferfs as a 32bit long 
