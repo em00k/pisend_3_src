@@ -49,7 +49,6 @@ main:
         ; dw      $1601
 
         ld      (fixstack+1),sp                 ; save stack for exit 
-        ld      hl,($5B8A)
         ld      sp, $5B8A+32                       ; very temp stack 
 
         call    saveAllBanks                    ; save all banks 
