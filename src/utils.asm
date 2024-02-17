@@ -74,8 +74,10 @@ slotBuffers:
     db      $ff, $ff, $0a, $0b, $04, $05, $00, $01  ; default
 
 
-freebank:
-			
+freebanks:
+			ld 	a, (banks_set)
+			or	a
+			ret z 
 			ld a,(bank3) : call free 
 			ld a,(bank4) : call free 
 			ld a,(bank5) : call free 
@@ -121,6 +123,10 @@ getbank:
 bank:       
 			db 223
 
+print_version:
+			ld 		hl,version
+			call 	print_at
+			ret 
 
 ; Count string 
 ; IN HL > pointer to zero term string

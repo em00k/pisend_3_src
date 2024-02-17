@@ -1,31 +1,55 @@
 do_file_upload:		
 
         ; clear the top of the screen 
-        call    clear_screen
+        ; call    clear_screen          no longer went to clear screen
 
     ; find the current baud 
 
     ; open the file 
 
+        call    print_version
+
         call    setdrv 
+
+        call    load_config_file 
+        
+        jp      c, .not_valid_supwait               ; no carry then we failed to open
+        
+        ld      a, (config_file)
+        ; and     7 
+        
+        cp      8                       ; check if over 8 
+        jp      nc, .not_valid_supwait  ; do not skip if under 8 
+        dec     a                       ; check if 0<
+        jp      nc, .not_valid_supwait           
+        
+        nextreg $7f, 2                  ; set nextreg 
+
+        ld      a,  (config_file)
+        ld      (curbaud), a 
+        call    setbaudrate 
+
+.fix_char:
+        ld      (hl), 0 
         ld      ix, command_buffer
         call    openfile
-        ld      hl, command_buffer+2
-        call    getfilesize		; get size of file into bufferfs
-        jp      c, fail_to_open
 
+        call    getfilesize		; get size of file of handle from openfil
+        jp      c, fail_to_open
+        
+
+.not_valid_supwait:
         ld      a, $7F                  ; user register 
         call    getreg 
         ld      b, a 
-        and     15                      ; bottom bits only 
-        cp      8                       ; is it set to 8? 
-        jr      z, .set_to_2mbit
-        cp      2                       ; or set to 2?
-        jr      z, .set_to_115k
+        ;and     15                      ; bottom bits only 
+        ;cp      8                       ; is it set to 8? 
+        ;jr      z, .set_to_2mbit
+        ;cp      2                       ; or set to 2?
+        ;jr      z, .set_to_115k
 
 .set_to_2mbit:
-        ld      a, 1
-        ld      (curbaud), a 
+
 .set_to_115k:
 
         push    bc 
@@ -33,11 +57,12 @@ do_file_upload:
         ld      hl, open_text
         call    print_rst16
         call    open_uart               ; open the uart 
-        pop     af 
-        and     $F0 
-        cp      128
-        jr      z,.skip_supwait
+        ;pop     af 
+        ;and     $F0 
+        ;cp      128
+        ;jr      z,.skip_supwait
         call    waitforsup
+
 .skip_supwait
         ld      hl, open_done
         call    print_rst16
@@ -56,6 +81,8 @@ do_file_upload:
         call getbank : ld (bank4),a 
         call getbank : ld (bank5),a 
         call getbank : ld (bank6),a 
+        ld      hl, banks_set  
+        ld      (hl), 1 
     ;    call getbank : ld (bank7),a 
 
     ; and now set those banks 
@@ -66,12 +93,9 @@ do_file_upload:
         ld a,(bank6) : nextreg $56,a
     ;    ld a,(bank7) : nextreg $57,a
 
-
-
         ; print the filename 
+        ld      hl,txtfname : call print_at
         ld      hl,command_buffer : call print_fname 
-
-
 
         ; print text "Size"
         ld      hl,txtsize : call print_rst16
@@ -80,7 +104,7 @@ do_file_upload:
         ld      de,(bufferfs+9)                         ; get the fs in hlde
         ld      hl,(bufferfs+7)
         call    b2d32                                   ; convert to ascii 
-        ld      hl,b2dend-11                            ; point to buffer
+
         call    print_rst16                             ; print 
         ld      a,13 : rst 16                           ; new line 
 
@@ -121,7 +145,9 @@ do_file_upload:
         ld      a, "0"                      ; print the chunks 
         ld      (b2dfilc),a 
         ld      hl, (nr_loops)
-        call    print_AA
+        call    b2d16
+        call    print_rst16
+        ;call    print_AA
         ld      a, '/'
         rst     16
         
@@ -214,16 +240,16 @@ no_loops_required:
 
         call    rast_delay 
 
-       ; call    check_md5sum 
-       ; call    read_uart_bank
+       call    check_md5sum 
+       call    read_uart_bank
 
-       ; ld      hl,$a000
+       ld      hl,$a000
 
-       ; ei 
-       ; call 	print_rst16 
-       ; di
-        
-        ret 
+       ei 
+       call 	print_rst16 
+       di
+
+        jp      finish 
 
 fail_to_open:
         ld      hl, failed_open
@@ -276,28 +302,24 @@ check_md5sum:
 
 update_info:
 
-        ld      a, "0"
-        ld      (b2dfilc),a 
-        ld      hl,.at
-        call    print_rst16
-        ld      hl,(nr_loops)
-        call    print_AA
 
-        ld      a, " "
-        ld      (b2dfilc),a 
+        
+        ld      hl,(nr_loops)
+        call    b2d16
+        call    print_rst16
+
+        ld      b, 1
+1:      ld      a, 8
+        rst     16 
+        djnz    1B 
+
         ret 
-.at:
-        db      22, 6, 16, 0 
+
 
 show_remainder_text:
-
-        ld      hl,.at
-        call    print_rst16
-        ld      hl,bc : 
-        ld      a, b 
-        or      c 
-        ret     z               ; dont show if zero 
-        call b2d16 : ld hl,b2dend-5 : call print_rst16
+        
+        ld   a, 13 : rst 16 
+        call b2d16 : call print_rst16
         ret 
 .at:
         db      22, 7, 16, 0 
