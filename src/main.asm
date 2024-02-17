@@ -173,8 +173,8 @@ fixstack
         pop     af,bc,de,hl,ix,iy
 
         xor     a 
-        ld      a,1
-        scf 
+        ;ld      a,1
+        ;scf 
         ei 
         ret 
 
@@ -275,4 +275,4 @@ end_of_main:
         ; SAVENEX CLOSE
 
         savebin "p3", $2000, end_of_main-$2000
-    ;    savebin "h:/dot/p3", $2000, end_of_main-$2000
+        savebin "h:/dot/p3", $2000, end_of_main-$2000
