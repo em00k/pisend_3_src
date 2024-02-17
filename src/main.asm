@@ -30,7 +30,8 @@ main:
 
 	di 
        
-        getreg($07)
+        ld      a, $7                          ; get cpu speed
+        call    getreg
         ld      (cpu_speed), a 
         nextreg TURBO_CONTROL_NR_07, 3          ; set to 28mhz 
         ld      (command_line),hl                ; save cmd line add
@@ -48,7 +49,7 @@ main:
         ; dw      $1601
 
         ld      (fixstack+1),sp                 ; save stack for exit 
-       '' ld      hl,($5B8A)
+        ld      hl,($5B8A)
         ld      sp, $5B8A+32                       ; very temp stack 
 
         call    saveAllBanks                    ; save all banks 
