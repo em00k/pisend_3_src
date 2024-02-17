@@ -149,3 +149,5 @@ set_speed_buffer
 command_buffer		
 				ds		256,0
 banks_set       db      0
+ret_code		db 		0,0
+cpu_speed		db 		0  
