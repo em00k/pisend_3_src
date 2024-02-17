@@ -255,7 +255,7 @@ overrun		dw      0000
 silent_key_flag db      0 
 ;------------------------------------------------------------------------------
 ; Stack reservation
-STACK_SIZE      equ     100
+STACK_SIZE      equ     200
 
 stack_bottom:
         defs    STACK_SIZE * 2
