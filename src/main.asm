@@ -15,7 +15,7 @@
         DEFINE DEBUGLOG 
 
         org     $2000
-        
+
         jp      main 
         db      ".pisend-3.em00k.",VERS
         include "hardware.inc"
@@ -163,8 +163,6 @@ finish:	di
         ; ld a,(bank6orig) : nextreg MMU6_C000_NR_56, a
         ; ld a,(bank7orig) : nextreg MMU7_E000_NR_57, a 
 
-
-
 fixstack	
         ld      sp,0000			
         
@@ -277,4 +275,4 @@ end_of_main:
         ; SAVENEX CLOSE
 
         savebin "p3", $2000, end_of_main-$2000
-        savebin "h:/dot/p3", $2000, end_of_main-$2000
+    ;    savebin "h:/dot/p3", $2000, end_of_main-$2000
