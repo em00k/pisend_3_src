@@ -113,8 +113,8 @@ getbank:
 			ld a,e 
 			jr .notfailed
 
-.failed:		; added this for when working in CSpect in
-			LOG "FAILED TO RESERVER BANK"
+.failed:	; added this for when working in CSpect in
+			;LOG "FAILED TO RESERVER BANK"
 			ld a,34
 			;ld hl,bank
 			;dec (hl)
@@ -123,10 +123,75 @@ getbank:
 bank:       
 			db 223
 
+show_baud_speeds:
+
+        ld      hl,baud_help_txt
+        call    print_rst16
+        xor     a 
+        ld      (show_loop),a  
+        ld      a, 13 : rst 16 
+.show_loop:
+
+        ld      a,(show_loop)
+        call    print_A
+
+        ld      a, 32 : rst 16 
+
+        ld      a,(show_loop)
+        ld 	hl, baud_txt
+        add	hl,a 
+        add	hl,a 
+
+        ld	a,(hl)					; (hl) > hl
+        inc	hl
+        ld 	h,(hl)
+        inc	hl 
+        ld 	l,a								; hl now points to baud ascii +zero       
+        call    print_rst16             ; print text 
+
+        ld      a,(show_loop)
+        or      a 
+        jr      nz, .not_def
+        LOG     "    Default"
+        jr      .no_lf
+.not_def:
+        ld      a, 13 : rst 16 
+.no_lf:
+        ld      a,(show_loop)
+        inc     a
+        ld      (show_loop),a 
+        cp      8
+        jp      z,finish
+
+        jp      .show_loop
+show_loop:
+        db      0 
+baud_help_txt:
+        db ".p3 -b [n]",13
+        db "This will set the baud rate    ",13
+        db "between the pi0 and Next. Hard ",13
+        db "reset the pi to go back to def. ",13,13,0
+      
+
 print_version:
 			ld 		hl,version
 			call 	print_at
 			ret 
+
+
+; Check for space
+; 
+; 
+check_break:
+	xor 	a 
+	in 		a, ($fe)
+	cpl
+	and 	15
+	jr		nz,._break_pressed
+	ret
+._break_pressed:
+	LOG "BREAK"
+	jp 		finish
 
 ; Count string 
 ; IN HL > pointer to zero term string

@@ -64,7 +64,7 @@ openfile:
 			call 	fseek
 			ret 
 fail_open:
-			;LOG "FAILED OPEN"
+			LOG "FAILED OPEN"
 			call 	show_error
 			ret 
 loadfile: 	
@@ -167,7 +167,7 @@ config_file:
 			db 		0 			; last working baud rate 
 			ds		15,$FF
 config_file_name:
-			db 		"./sys/p3.cfg",0
+			db 		"p3.cfg",0
 
 exsdos_errors:
 

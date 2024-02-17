@@ -1,6 +1,6 @@
 
 ; source code for pisend 3
-; em00k 2003.9.18
+; em00k 2024.17.03.23
 ; http://github.com/em00k/pisend3
 
 ; This is a rewrite of pisend 2.41, this will hopefully be a cleaner implementaion 
@@ -11,7 +11,7 @@
         DEVICE ZXSPECTRUMNEXT
         CSPECTMAP "pisend_src.map"
 
-        DEFINE VERS "2024.17.02.02"
+        DEFINE VERS "2024.17.03.23"
         DEFINE DEBUGLOG 
 
         org     $2000
@@ -30,6 +30,9 @@ main:
 
 	di 
        
+        ld      a, $7                          ; get cpu speed
+        call    getreg
+        ld      (cpu_speed), a 
         nextreg TURBO_CONTROL_NR_07, 3          ; set to 28mhz 
         ld      (command_line),hl                ; save cmd line add
        
@@ -46,7 +49,7 @@ main:
         ; dw      $1601
 
         ld      (fixstack+1),sp                 ; save stack for exit 
-        ld      sp,$5BBF                        ; very temp stack 
+        ld      sp, $5B8A+32                       ; very temp stack 
 
         call    saveAllBanks                    ; save all banks 
 
@@ -141,27 +144,21 @@ silent_key:
         jp      process_args.parse_args
 
 upload_mode:
-        call    do_file_upload
-        
-        jr $
+
+        call    do_file_upload        
 
 finish:	di 
-        ;ld      ix,config_file_name
-        ;call    savefile
 
-        ld      sp,$5BBF
+        ld      sp, $5B8A+32
 
         call    restoreAllBanks
         call    freebanks
         
-        
+        ld      a, (cpu_speed)
+        nextreg TURBO_CONTROL_NR_07, a
 ;------------------------------------------------------------------------------
 ; Epilogue 
-        ; ld a,(bank3orig) : nextreg MMU3_6000_NR_53, a
-        ; ld a,(bank4orig) : nextreg MMU4_8000_NR_54, a
-        ; ld a,(bank5orig) : nextreg MMU5_A000_NR_55, a
-        ; ld a,(bank6orig) : nextreg MMU6_C000_NR_56, a
-        ; ld a,(bank7orig) : nextreg MMU7_E000_NR_57, a 
+
 
 fixstack	
         ld      sp,0000			
@@ -173,62 +170,12 @@ fixstack
         pop     af,bc,de,hl,ix,iy
 
         xor     a 
-        ;ld      a,1
-        ;scf 
         ei 
         ret 
 
 ; END OF PROGRAM 
 
-show_baud_speeds:
 
-        ld      hl,baud_help_txt
-        call    print_rst16
-        xor     a 
-        ld      (show_loop),a  
-        ld      a, 13 : rst 16 
-.show_loop:
-
-        ld      a,(show_loop)
-        call    print_A
-
-        ld      a, 32 : rst 16 
-
-        ld      a,(show_loop)
-        ld 	hl, baud_txt
-        add	hl,a 
-        add	hl,a 
-
-        ld	a,(hl)					; (hl) > hl
-        inc	hl
-        ld 	h,(hl)
-        inc	hl 
-        ld 	l,a								; hl now points to baud ascii +zero       
-        call    print_rst16             ; print text 
-
-        ld      a,(show_loop)
-        or      a 
-        jr      nz, .not_def
-        LOG     "    Default"
-        jr      .no_lf
-.not_def:
-        ld      a, 13 : rst 16 
-.no_lf:
-        ld      a,(show_loop)
-        inc     a
-        ld      (show_loop),a 
-        cp      8
-        jp      z,finish
-
-        jp      .show_loop
-show_loop:
-        db      0 
-baud_help_txt:
-        db ".p3 -b [n]",13
-        db "This will set the baud rate    ",13
-        db "between the pi0 and Next. Hard ",13
-        db "reset the pi to go back to def. ",13,13,0
-      
 ;------------------------------------------------------------------------------
 ; includes
 
@@ -276,3 +223,4 @@ end_of_main:
 
         savebin "p3", $2000, end_of_main-$2000
         savebin "h:/dot/p3", $2000, end_of_main-$2000
+        savebin "h:/dot/pisend", $2000, end_of_main-$2000
