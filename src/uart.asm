@@ -43,7 +43,8 @@ read_uart_bank:
 			jr		z, .done_md5
 			
 			call	.delay 
-
+			call 	check_break 
+			
 			ld 		bc, UART_TX_P_133B
 			in		a, (c)
 			and		1 									; is bit 0 set (RX contains bytes)
@@ -159,7 +160,7 @@ wait_for_string:
 			ld	    bc,UART_TX_P_133B               	; open tranfer port 
 			in		a,(c) : and 1 : cp 1				; wait for a new byte
 			jp      nz,.wait_loop
-            
+            call 	check_break 
 			
 			jp      .uartlp
 .matched:
@@ -581,7 +582,7 @@ readuart:   ld      bc,UART_RX_P_143B : ld hl,uartstring
 
 			call    rast_delay 
 			call 	check_break 
-			
+
 			inc     hl : ld a,(hl) : or a 
 			jp      z,readone
 			jp      .uartlp

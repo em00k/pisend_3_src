@@ -82,11 +82,11 @@ do_file_upload:
 
     ; now we will backup current mmu slots 
 
-        ; ld a, $53 : call getreg : ld (bank3orig),a	          
-        ; ld a, $54 : call getreg : ld (bank4orig),a	          
-        ; ld a, $55 : call getreg : ld (bank5orig),a	          
-        ; ld a, $56 : call getreg : ld (bank6orig),a	          
-        ; ld a, $57 : call getreg : ld (bank7orig),a
+        ld a, $53 : call getreg : ld (bank3orig),a	          
+        ld a, $54 : call getreg : ld (bank4orig),a	          
+        ld a, $55 : call getreg : ld (bank5orig),a	          
+        ld a, $56 : call getreg : ld (bank6orig),a	          
+        ld a, $57 : call getreg : ld (bank7orig),a
 
     ; now request a free mmu bank 
 
@@ -253,15 +253,20 @@ no_loops_required:
 
 
         call    rast_delay 
+        di 
+        ld      sp, $5B8A+32    
+        nextreg $56, 0 
+        nextreg $57, 1
 
-       call    check_md5sum 
-       call    read_uart_bank
+        call    check_md5sum 
+        call    read_uart_bank
+        
+       
+        ld      hl,$a000
 
-       ld      hl,$a000
-
-       ei 
-       call 	print_rst16 
-       di
+        ei 
+        call 	print_rst16 
+        di
 
         jp      finish 
 
