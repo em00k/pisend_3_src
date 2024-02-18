@@ -100,6 +100,27 @@ failed_to_open_config:
 			LOG		"FAILED TO OPEN CONFIG"
 			ret 
 
+get_cwd:
+			ld 		hl, dir_buffer 
+			ld		a, '$'
+			ld 		b, 0
+			rst 	8
+			db		$a8				; f_getcwd
+			jr 		c,failopen
+			ret 
+
+change_dir:
+			ld		a, 0 
+			rst 	8
+			db 		$89
+			ld 		hl, dir_buffer
+			;ld 		a, '$'
+			ld 		b, 0
+			rst 	8
+			db		$a9
+			jr 		c,failopen
+			ret
+
 getfilesize_stat: 
 			; ix = filespec hl in dotland 
 			ld 		de,bufferfs
@@ -110,6 +131,7 @@ getfilesize_stat:
 			jr 		c,failopen
 			;a = error code 
 			jr 		donefsizefs
+
 
 getfilesize: 
 			; ix = filespec hl in dotland 
@@ -167,7 +189,7 @@ config_file:
 			db 		0 			; last working baud rate 
 			ds		15,$FF
 config_file_name:
-			db 		"./sys/p3.cfg",0
+			db 		"c:/sys/p3.cfg",0
 
 exsdos_errors:
 
