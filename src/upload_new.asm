@@ -82,11 +82,11 @@ do_file_upload:
 
     ; now we will backup current mmu slots 
 
-        ; ld a, $53 : call getreg : ld (bank3orig),a	          
-        ; ld a, $54 : call getreg : ld (bank4orig),a	          
-        ; ld a, $55 : call getreg : ld (bank5orig),a	          
-        ; ld a, $56 : call getreg : ld (bank6orig),a	          
-        ; ld a, $57 : call getreg : ld (bank7orig),a
+        ld a, $53 : call getreg : ld (bank3orig),a	          
+        ld a, $54 : call getreg : ld (bank4orig),a	          
+        ld a, $55 : call getreg : ld (bank5orig),a	          
+        ld a, $56 : call getreg : ld (bank6orig),a	          
+        ld a, $57 : call getreg : ld (bank7orig),a
 
     ; now request a free mmu bank 
 
