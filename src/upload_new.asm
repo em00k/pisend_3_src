@@ -253,15 +253,20 @@ no_loops_required:
 
 
         call    rast_delay 
+        di 
+        ld      sp, $5B8A+32    
+        nextreg $56, 0 
+        nextreg $57, 1
 
-       call    check_md5sum 
-       call    read_uart_bank
+        call    check_md5sum 
+        call    read_uart_bank
+        
+       
+        ld      hl,$a000
 
-       ld      hl,$a000
-
-       ei 
-       call 	print_rst16 
-       di
+        ei 
+        call 	print_rst16 
+        di
 
         jp      finish 
 
