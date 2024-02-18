@@ -11,7 +11,16 @@ do_file_upload:
 
         call    setdrv 
 
+        call    get_cwd
+        
+        ld      hl, dir_buffer
+
+        //call    print_rst16
+
         call    load_config_file 
+
+        call    get_cwd
+
         
         jp      c, .not_valid_supwait               ; no carry then we failed to open
         
@@ -31,7 +40,11 @@ do_file_upload:
 
 .fix_char:
         ld      (hl), 0 
+        
+        call    change_dir
+        
         ld      ix, command_buffer
+
         call    openfile
 
         call    getfilesize		; get size of file of handle from openfil
@@ -95,6 +108,9 @@ do_file_upload:
 
         ; print the filename 
         ld      hl,txtfname : call print_at
+        ld      hl, dir_buffer
+        call    print_rst16
+        ld      a, 13 : rst 16
         ld      hl,command_buffer : call print_fname 
 
         ; print text "Size"
@@ -123,9 +139,9 @@ do_file_upload:
 .fs_null:
         ; exit out of routine 
         LOG     "ERROR WITH FS"
-        ret 
+        ;ret 
         ;pop     hl                  ; get the ret off the stack 
-        ;jp      finish
+        jp      finish
 
 .file_size_ok:
 
@@ -195,10 +211,6 @@ outer_loop:
         ld      hl, ba64buff
         ld      (filesize), bc        
         call    senduartmemory 
-
-        ; print chunks 
-        
-        ; ld h,b : ld l,c : call b2d16 : ld hl,b2dend-5 : call print_rst16
 
         call    check_break
 

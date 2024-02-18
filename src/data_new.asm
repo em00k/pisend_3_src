@@ -110,7 +110,7 @@ updatetext		db		 13,"Baud update + rebooting pi"
 
 failed_open		db		"Failed to open file",0
 
-open_text		db		 "Open Pi0 UART....",0
+open_text		db		 13,"Open Pi0 UART....",0
 open_done		db		 "connected!",13,0
 connect_txt		db		 13,"Connected to pi0 UART at ",255
 check_md5_txt	db		 'printf "\xFF\xFF" > /tmp/_ps.txt',$0a,'md5sum ',0 
@@ -151,3 +151,5 @@ command_buffer
 banks_set       db      0
 ret_code		db 		0,0
 cpu_speed		db 		0  
+
+dir_buffer		ds 		256, 0 
