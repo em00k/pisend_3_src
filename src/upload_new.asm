@@ -123,9 +123,9 @@ do_file_upload:
 .fs_null:
         ; exit out of routine 
         LOG     "ERROR WITH FS"
-        ret 
+        ;ret 
         ;pop     hl                  ; get the ret off the stack 
-        ;jp      finish
+        jp      finish
 
 .file_size_ok:
 
