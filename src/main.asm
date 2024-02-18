@@ -1,6 +1,6 @@
 
 ; source code for pisend 3
-; em00k 2024.17.03.23
+; em00k 2024
 ; http://github.com/em00k/pisend3
 
 ; This is a rewrite of pisend 2.41, this will hopefully be a cleaner implementaion 
@@ -11,7 +11,7 @@
         DEVICE ZXSPECTRUMNEXT
         CSPECTMAP "pisend_src.map"
 
-        DEFINE VERS "2024.17.03.23"
+        DEFINE VERS "2024.17.04.00"
         DEFINE DEBUGLOG 
 
         org     $2000
